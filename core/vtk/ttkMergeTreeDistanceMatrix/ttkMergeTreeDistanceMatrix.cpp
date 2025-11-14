@@ -55,6 +55,9 @@ int ttkMergeTreeDistanceMatrix::FillInputPortInformation(int port,
   return 1;
 }
 
+
+
+
 /**
  * Specify the data object type of each output port
  *
@@ -79,6 +82,9 @@ int ttkMergeTreeDistanceMatrix::FillOutputPortInformation(
 
   return 1;
 }
+
+
+
 
 /**
  * Pass VTK data to the base code and convert base code output to VTK
@@ -112,6 +118,43 @@ int ttkMergeTreeDistanceMatrix::run(
     constructTrees(inputTrees2ToUse, intermediateTrees2, !useSadMaxPairs);
   }
 
+  MergeTree<dataType> exp = intermediateTrees[0];
+
+  /*
+  printTree(exp, true);
+
+  std::cout << "Scalars of Merge Tree: " << std::endl;
+  for (unsigned int i = 0; i < exp.tree.getNumberOfNodes(); ++i){
+    std::cout <<"   Node " << i << ":  " << exp.tree.template getValue<dataType>(i)<< "\n";
+  }
+  std::cout <<"\n\n";
+  */
+  
+  std::vector<idNode> children;
+  exp.tree.getChildren(exp.tree.getRoot(),children);
+  
+  Timer timer;
+  std::shared_ptr<MergeTree<dataType>> resexp =computeCompleteBranchDecomposition<dataType>(&exp, exp.tree.getRoot(), children[0]);
+  std::cout << "Computation of CBD took " << timer.getElapsedTime() << "s\n";
+  /*
+  for (unsigned int i = 0; i < resexp->tree.getNumberOfNodes(); ++i){
+    std::cout << "Node " << i ;
+    std::cout << "\n    Scalar: "  << resexp->tree.template getValue<dataType>(i);
+    std::cout << "\n    Origin: " << resexp->tree.getNode(i)->getOrigin();
+    std::cout << "\n    Is subtree: " << resexp->tree.getNode(i)->getIsSubtree() ;
+    std::cout << "\n    Children: ";
+    std::vector<idNode> ccs2;
+    resexp->tree.getChildren(i,ccs2);
+    for (idNode c: ccs2){
+      std::cout << c << ", ";
+    }
+    std::cout << "\n";
+  }
+  std::cout << std::endl;
+  */
+
+  testingStats(resexp, &exp);
+  
   // Verify parameters
   if(not UseFieldDataParameters) {
     if(Backend == 0) {

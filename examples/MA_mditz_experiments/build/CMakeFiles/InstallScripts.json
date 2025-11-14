@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/mditz/ttk/ttk/examples/MA_mditz_experiments/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

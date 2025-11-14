@@ -1,6 +1,18 @@
 {
-    "version": 6,
+    "version": 3,
     "configurePresets": [
+        {
+        "name": "ma_mditz",
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "Python3_EXECUTABLE": "/usr/bin/python3",
+                "Python3_INCLUDE_DIR": "/usr/include/python3.10",
+                "Python3_LIBRARY": "/usr/lib/x86_64-linux-gnu/libpython3.10.so",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
         {
             "name": "TTK-Default",
             "hidden": true,
@@ -19,8 +31,9 @@
                 "TTK_ENABLE_CPU_OPTIMIZATION": "OFF",
                 "TTK_ENABLE_MPI": "OFF",
                 "TTK_ENABLE_KAMIKAZE": "ON",
-                "TTK_ENABLE_WEBSOCKETPP": "OFF",
-                "WEBSOCKETPP_DIR": "/home/wetzels/ttk/ttk-jonas/websocketpp/install/lib/cmake/websocketpp"
+                "Python3_EXECUTABLE": "/usr/bin/python3",
+                "Python3_INCLUDE_DIR": "/usr/include/python3.10",
+                "Python3_LIBRARY": "/usr/lib/x86_64-linux-gnu/libpython3.10.so"
             }
         },
         {

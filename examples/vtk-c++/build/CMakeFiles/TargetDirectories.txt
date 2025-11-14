@@ -1,0 +1,3 @@
+/home/mditz/ttk/ttk/examples/vtk-c++/build/CMakeFiles/ttkExample-vtk-c++.dir
+/home/mditz/ttk/ttk/examples/vtk-c++/build/CMakeFiles/edit_cache.dir
+/home/mditz/ttk/ttk/examples/vtk-c++/build/CMakeFiles/rebuild_cache.dir

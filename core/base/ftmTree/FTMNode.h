@@ -32,7 +32,20 @@ namespace ttk {
       // link with superArc above and below
       std::vector<idSuperArc> vect_downSuperArcList_, vect_upSuperArcList_;
 
+      //MA_mditz: Complete Branch Decomposition
+      bool isSubtree_ = false;
+
     public:
+      // MA_mditz additions
+      
+      inline bool getIsSubtree() {
+        return isSubtree_;
+      }
+
+      inline void setIsSubtree(bool isSubtree) {
+        isSubtree_ = isSubtree;
+      }
+
       // -----------------
       // CONSTRUCTOR
       // -----------------
@@ -44,7 +57,7 @@ namespace ttk {
       Node(SimplexId id, SimplexId linked)
         : vertexId_(id), linkedNode_(linked) {
       }
-
+      
       // -----------------
       // ACCESSOR
       // ------------------

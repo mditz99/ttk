@@ -459,9 +459,10 @@ namespace ttk {
         for(unsigned int i = 0; i < this->getNumberOfNodes(); ++i)
           // if(not tree->isNodeAlone(i))
           printNodeSS(i, ss);
-
       if(doPrint)
         printMsg(ss.str());
+      //MA_mditz (hat irgendwie nicht funktioniert)
+      std::cout << ss.str()<< std::endl;
       return ss;
     }
 

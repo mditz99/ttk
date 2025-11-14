@@ -474,8 +474,48 @@ namespace ttk {
         verifyOrigins<dataType>(tree);
       }
     }
+    /*
+    template <class dataType> 
+    ftm::MergeTree<dataType> *computeCompleteBranchDecomposition(
+      ftm::FTMTree_MT *tree) {
+      //Bottom up traversel of a Merge tree through recursion 
+      //Recursion base case
+      if(tree->isThereOnlyOnePersistencePair()) {
+        ftm::idNode const rootOrigin = treeNew->getNode(root)->getOrigin();
+        treeNew->getNode(rootOrigin)->setOrigin(rootOrigin);
+        return treeNew;
+      }
+      else{
 
-    template <class dataType>
+      }
+      
+      ftm::MergeTree<dataType> mergeTree();
+      ftm::FTMTree_MT* CompleteBDTree;
+      ftm::idNode const root = treeNew->getRoot();
+      std::vector<bool> nodeDone(tree->getNumberOfNodes(), false);
+      std::queue<ftm::idNode> queueNodes;
+      queueNodes.emplace(root);
+
+      
+      auto scalars = std::make_shared<Scalars>();
+      scalars->size = NUMBER_OF_NODES
+      auto scalarsValues = std::make_shared<std::vector<dataType>>(scalars->size);
+      // Fill the values of the scalars array (basically the value of node 0 in the structure will be to the Oth entry of this array)
+      scalars->values = (void *)(scalarsValues->data());
+      auto params = std::make_shared<Params>();
+      params->treeType = Join_Split;
+      MergeTree<dataType> mergeTree(scalars, scalarsValues, params);
+
+
+
+      mergeTree.tree.makeNode(i);
+      mergeTree.tree.makeSuperArc(downId, upId);
+      
+      return tree;
+    }
+    */
+
+    template <class dataType> 
     ftm::FTMTree_MT *computeBranchDecomposition(
       ftm::FTMTree_MT *tree,
       std::vector<std::vector<ftm::idNode>> &treeNodeMerged) {

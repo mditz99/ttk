@@ -895,6 +895,9 @@ namespace ttk {
 
     template <typename dataType>
     struct MergeTree {
+      //MA_mditz
+      unsigned int numNodes = 0;
+      //
       std::shared_ptr<ftm::Scalars> scalars;
       std::shared_ptr<std::vector<dataType>> scalarsValues;
       std::shared_ptr<ftm::Params> params;
