@@ -402,8 +402,12 @@ namespace ttk {
       // Add Nodes
       for(unsigned int i = 0; i < tree->getNumberOfNodes(); ++i)
         this->makeNode(i);
+        
       for(unsigned int i = 0; i < tree->getNumberOfNodes(); ++i)
         this->getNode(i)->setOrigin(tree->getNode(i)->getOrigin());
+
+      for(unsigned int i = 0; i < tree->getNumberOfNodes(); ++i)
+        this->getNode(i)->setIsSubtree(tree->getNode(i)->getIsSubtree());
 
       // Add Arcs
       for(unsigned int i = 0; i < tree->getNumberOfNodes(); ++i) {

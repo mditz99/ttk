@@ -957,11 +957,21 @@ namespace ttk {
         tree.copyMergeTreeStructure(const_cast<FTMTree_MT *>(&(mt.tree)));
       }
 
+      
       MergeTree(const MergeTree<dataType> &mt)
         : scalars(mt.scalars), scalarsValues(mt.scalarsValues),
           params(mt.params), tree(params, scalars, params->treeType) {
         copy(mt);
       }
+      
+
+      /*
+      MergeTree(const MergeTree<dataType> &mt)
+        : scalars(std::make_shared<ftm::Scalars>()), scalarsValues(std::make_shared<std::vector<dataType>>()),
+          params(std::make_shared<ftm::Params>()), tree(params, scalars, params->treeType) {
+        copy(mt);
+      }
+      */
 
       MergeTree<dataType> &operator=(const MergeTree<dataType> &mt) {
         if(&mt != this) {

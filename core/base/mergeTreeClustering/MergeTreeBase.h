@@ -23,6 +23,9 @@ namespace ttk {
 
   class MergeTreeBase : virtual public Debug {
   protected:
+    //MA_mditz
+    bool  MA_mditz = true;
+
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
     double epsilonTree1_ = 0;
@@ -65,6 +68,10 @@ namespace ttk {
       this->setDebugMsgPrefix(
         "MergeTreeBase"); // inherited from Debug: prefix will be printed
                           // at the beginning of every msg
+    }
+
+    void setMA_mditz(bool b){
+      MA_mditz = b;
     }
 
     void setAssignmentSolver(int assignmentSolver) {
@@ -474,46 +481,193 @@ namespace ttk {
         verifyOrigins<dataType>(tree);
       }
     }
-    /*
+    
     template <class dataType> 
-    ftm::MergeTree<dataType> *computeCompleteBranchDecomposition(
-      ftm::FTMTree_MT *tree) {
-      //Bottom up traversel of a Merge tree through recursion 
-      //Recursion base case
-      if(tree->isThereOnlyOnePersistencePair()) {
-        ftm::idNode const rootOrigin = treeNew->getNode(root)->getOrigin();
-        treeNew->getNode(rootOrigin)->setOrigin(rootOrigin);
-        return treeNew;
-      }
-      else{
-
-      }
-      
-      ftm::MergeTree<dataType> mergeTree();
-      ftm::FTMTree_MT* CompleteBDTree;
-      ftm::idNode const root = treeNew->getRoot();
-      std::vector<bool> nodeDone(tree->getNumberOfNodes(), false);
-      std::queue<ftm::idNode> queueNodes;
-      queueNodes.emplace(root);
-
-      
-      auto scalars = std::make_shared<Scalars>();
-      scalars->size = NUMBER_OF_NODES
-      auto scalarsValues = std::make_shared<std::vector<dataType>>(scalars->size);
-      // Fill the values of the scalars array (basically the value of node 0 in the structure will be to the Oth entry of this array)
-      scalars->values = (void *)(scalarsValues->data());
-      auto params = std::make_shared<Params>();
-      params->treeType = Join_Split;
-      MergeTree<dataType> mergeTree(scalars, scalarsValues, params);
-
-
-
-      mergeTree.tree.makeNode(i);
-      mergeTree.tree.makeSuperArc(downId, upId);
-      
-      return tree;
+    std::shared_ptr<ftm::MergeTree<dataType>> computeCompleteBranchDecomposition(ftm::MergeTree<dataType>* inputMTptr){
+      std::vector<ftm::idNode> children;
+      inputMTptr->tree.getChildren(inputMTptr->tree.getRoot(),children);
+      return computeCompleteBranchDecomposition<dataType>(inputMTptr, inputMTptr->tree.getRoot(), children[0]);
     }
-    */
+
+    template <class dataType> 
+    std::shared_ptr<ftm::MergeTree<dataType>> computeCompleteBranchDecomposition(
+      ftm::MergeTree<dataType>* inputMTptr, ftm::idNode pId, ftm::idNode cId) {
+      
+
+      //=====================================================
+      //Bottom up  through Edge Recursion of Input MergeTree
+      //=====================================================
+      //Conventions for the result CBD for easier handling throughout the algorithm: 
+      //- Subtree node resembling the entire tree are at entry 0
+      //- idNode == Index of node in nodes vector
+      //- Subtree nodes store the higher(closer to root) node's scalar, but just to have an origin for the branch nodes. 
+      //  Theoretically, they do not have any scalar value as they are not part of an underlying BDT.
+      //- Branch nodes store the lowest node's scalar
+
+      
+      std::vector<ftm::idNode> ccs; 
+      inputMTptr->tree.getChildren(cId, ccs);
+      unsigned int numCcs = ccs.size();
+      for(unsigned int i = 0; i < numCcs; ++i){
+      }    
+
+
+      //  Base case
+      //  O parent p
+      //  |                      
+      //  O child c
+      if(numCcs ==  0) {
+        ftm::MergeTree<dataType> in2 = ttk::ftm::createEmptyMergeTree<dataType>(2);
+        std::shared_ptr<ftm::MergeTree<dataType>> completeBDptr = std::make_shared<ftm::MergeTree<dataType>>(in2);
+
+        completeBDptr->tree.makeNode(0); 
+        completeBDptr->tree.makeNode(1);
+
+        completeBDptr->tree.makeSuperArc(1, 0);
+        completeBDptr->tree.getNode(0)->setOrigin(1);  
+        completeBDptr->tree.getNode(1)->setOrigin(0);
+        
+        completeBDptr->tree.getNode(0)->setIsSubtree(true);
+
+        std::vector<dataType> scalarsCBD;
+        scalarsCBD.push_back(inputMTptr->tree.template getValue<dataType>(pId));
+        scalarsCBD.push_back(inputMTptr->tree.template getValue<dataType>(cId));
+
+        completeBDptr->scalarsValues = std::make_shared<std::vector<dataType>>(scalarsCBD);
+        completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
+        completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
+        //ftm::setTreeScalars<dataType>(*completeBDptr, scalarsCBD);
+        return completeBDptr;
+      }
+      else{ 
+        //  Step case
+        //      O parent p
+        //      |
+        //      O child c
+        //   ( ... ) 
+        //   O     O children ccs
+
+        //---------------------------------------------------------
+        //Recurse
+        std::vector<std::shared_ptr<ftm::MergeTree<dataType>>> recursion_results;
+        for(unsigned int i = 0; i < numCcs; ++i){
+          
+          
+          recursion_results.push_back(computeCompleteBranchDecomposition<dataType>(inputMTptr, cId, ccs[i]));
+          
+        }    
+        
+        //---------------------------------------------------------
+        //Computing the number of nodes in the result
+        
+                        
+        unsigned int numNodesResult = 1; //main subtree node
+        for(unsigned int i = 0; i < numCcs; ++i){
+          
+          std::shared_ptr<ftm::MergeTree<dataType>> currCBD = recursion_results[i];
+          unsigned int currNum = currCBD->scalars->size;
+          numNodesResult += currNum; //add on of recursive result
+          std::vector<ftm::idNode> cs;
+          currCBD->tree.getChildren(0,cs);
+          numNodesResult += cs.size(); //add extended main branches (c - l while l some leaf) from recursion result to p - l          
+        }
+        //---------------------------------------------------------
+        //Initialize CBD result
+        ftm::MergeTree<dataType> in2 = ttk::ftm::createEmptyMergeTree<dataType>(numNodesResult);
+        std::shared_ptr<ftm::MergeTree<dataType>> completeBDptr = std::make_shared<ftm::MergeTree<dataType>>(in2);
+        
+        *completeBDptr = in2;
+
+        //Remember scalars throughout merging and later steps to set at the end.
+        std::vector<dataType>scalarsCBD = std::vector<dataType>(numNodesResult);
+
+        //Make main subtree node
+        completeBDptr->tree.makeNode(0); 
+        scalarsCBD[0] = inputMTptr->tree.template getValue<dataType>(pId);
+        completeBDptr->tree.getNode(0)->setIsSubtree(true);
+
+        //---------------------------------------------------------
+        //Merge recursion results
+
+        unsigned int numAddedNodes = 1;
+
+        //References to main subtree nodes of the recursion results in merged CBDs
+        std::vector<ftm::idNode> mainSTNodes = std::vector<ftm::idNode>(numCcs);
+
+        for(unsigned int i = 0; i < numCcs; ++i){
+          //cciIH := CBD of Merge Tree rooted at [c,cc_i] through induction hypothesis 
+          std::shared_ptr<ftm::MergeTree<dataType>> cciIH = recursion_results[i];
+          unsigned int currOffset = numAddedNodes;
+          mainSTNodes[i] = currOffset;
+        
+          //Add all nodes, their origins, scalar values and subtree bool of cciIH
+          for(unsigned int nId = 0; nId < cciIH->tree.getNumberOfNodes(); ++nId){//(By conventions fine traversal of arcs)
+            unsigned int newId = currOffset + nId;
+            completeBDptr->tree.makeNode(newId);
+
+            ttk::ftm::Node* newNode = completeBDptr->tree.getNode(newId);
+            ttk::ftm::Node* oldNode = cciIH->tree.getNode(nId);
+            newNode->setOrigin(oldNode->getOrigin() + currOffset); //Get origin of node, set it with offset
+            newNode->setIsSubtree(oldNode->getIsSubtree());
+
+            numAddedNodes += 1;
+            dataType val = cciIH->tree.template getValue<dataType>(nId);
+            scalarsCBD[newId] = val;
+          }
+
+          //Add all arcs of cciIH 
+          for(unsigned int aId = 0; aId < cciIH->tree.getNumberOfSuperArcs(); ++aId){ //(By conventions fine traversal of arcs)
+            ttk::ftm::SuperArc* currArc = cciIH->tree.getSuperArc(aId);
+            completeBDptr->tree.makeSuperArc(currArc->getDownNodeId()+ currOffset , currArc->getUpNodeId()+ currOffset);
+          }
+        }
+        //---------------------------------------------------------
+        //Fill up the CBD 
+        // - Add Extended main branches (c-l) of the cciIHs to (p-l)
+        // - Add arc [Main subtree node, p-l]
+        // - Add arcs of (c-l) to (p-l) (all adjacent subtree nodes to (c-l) are also adjacent to (p-l))
+        // - Add arcs [p-l, mainSTNodes[j]] with j not i
+
+        for(unsigned int i = 0; i < numCcs; ++i){
+          std::vector<ftm::idNode> mainbranches;
+          completeBDptr->tree.getChildren(mainSTNodes[i],mainbranches);
+
+          for(ftm::idNode currMainBranch : mainbranches){
+            unsigned int currExtendedMainBranch = numAddedNodes;
+
+            //Add (p-l) as a node
+            completeBDptr->tree.makeNode(currExtendedMainBranch);
+            scalarsCBD[currExtendedMainBranch] = scalarsCBD[currMainBranch];
+            completeBDptr->tree.getNode(currExtendedMainBranch)->setOrigin(0); 
+            numAddedNodes += 1;
+
+            //Add arc [Main subtree node, p-l]
+            completeBDptr->tree.makeSuperArc(currExtendedMainBranch, 0);
+            
+            //Add arcs of (c-l) to (p-l)
+            std::vector<ftm::idNode> adjSubtreesCL;
+            completeBDptr->tree.getChildren(currMainBranch, adjSubtreesCL);
+            for(ftm::idNode adjTree : adjSubtreesCL){
+              completeBDptr->tree.makeSuperArc(adjTree,currExtendedMainBranch);
+            }
+
+            //Add arcs [p-l, mainSTNodes[j]] with j not i
+            for(unsigned int j = 0; j < numCcs; ++j){
+              if(i != j){
+                completeBDptr->tree.makeSuperArc(mainSTNodes[j], currExtendedMainBranch);
+              }
+            }
+            
+          } 
+        }
+        //---------------------------------------------------------
+        completeBDptr->scalarsValues = std::make_shared<std::vector<dataType>>(scalarsCBD);
+        completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
+        completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
+        //setTreeScalars(completeBDptr, scalarsCBD);
+        return completeBDptr;
+      }
+    }
 
     template <class dataType> 
     ftm::FTMTree_MT *computeBranchDecomposition(
@@ -707,25 +861,31 @@ namespace ttk {
 
       // - Compute branch decomposition
       // verifyPairsTree(tree);
+
+      if(MA_mditz){
+        mTree = *computeCompleteBranchDecomposition<dataType>(mTree);
+        tree = &(mTree.tree);
+      }
+
       if(branchDecompositionT
-         and (not isPersistenceDiagram_ or convertToDiagram_))
+         and (not isPersistenceDiagram_ or convertToDiagram_ or not MA_mditz))
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
 
       // - Delete multi pers pairs
-      if(deleteMultiPersPairs_)
+      if(deleteMultiPersPairs_ and not MA_mditz)
         deleteMultiPersPairs<dataType>(tree, branchDecompositionT);
 
       // - Remove min max pair
       // verifyPairsTree(tree);
-      if(not useMinMaxPairT)
+      if(not useMinMaxPairT and not MA_mditz)
         dontUseMinMaxPair<dataType>(tree);
 
       // - Epsilon 2 and 3 processing
-      if(branchDecompositionT and not isPersistenceDiagram_)
+      if(branchDecompositionT and not isPersistenceDiagram_ and not MA_mditz)
         persistenceMerging<dataType>(tree, epsilon2Tree, epsilon3Tree);
 
       // - Tree cleaning (remove unused nodes)
-      if(cleanTreeT) {
+      if(cleanTreeT and not MA_mditz) {
         ftm::cleanMergeTree<dataType>(mTree, nodeCorr, branchDecompositionT);
         tree = &(mTree.tree);
         reverseNodeCorr(tree, nodeCorr);

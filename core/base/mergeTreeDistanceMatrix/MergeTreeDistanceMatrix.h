@@ -148,6 +148,10 @@ namespace ttk {
             // Execute
             if(baseModule_ == 0) {
               MergeTreeDistance mergeTreeDistance;
+              
+              //MA_mditz
+              mergeTreeDistance.setMA_mditz(MA_mditz);
+
               mergeTreeDistance.setAssignmentSolver(assignmentSolverID_);
               mergeTreeDistance.setEpsilonTree1(epsilonTree1_);
               mergeTreeDistance.setEpsilonTree2(epsilonTree2_);

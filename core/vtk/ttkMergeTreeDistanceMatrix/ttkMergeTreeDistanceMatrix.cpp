@@ -120,7 +120,7 @@ int ttkMergeTreeDistanceMatrix::run(
 
   MergeTree<dataType> exp = intermediateTrees[0];
 
-  /*
+  
   printTree(exp, true);
 
   std::cout << "Scalars of Merge Tree: " << std::endl;
@@ -128,32 +128,50 @@ int ttkMergeTreeDistanceMatrix::run(
     std::cout <<"   Node " << i << ":  " << exp.tree.template getValue<dataType>(i)<< "\n";
   }
   std::cout <<"\n\n";
-  */
+  
   
   std::vector<idNode> children;
   exp.tree.getChildren(exp.tree.getRoot(),children);
   
   Timer timer;
-  std::shared_ptr<MergeTree<dataType>> resexp =computeCompleteBranchDecomposition<dataType>(&exp, exp.tree.getRoot(), children[0]);
+  std::shared_ptr<MergeTree<dataType>> resexpptr=computeCompleteBranchDecomposition<dataType>(&exp, exp.tree.getRoot(), children[0]);
+  MergeTree<dataType> resexp = *resexpptr;
   std::cout << "Computation of CBD took " << timer.getElapsedTime() << "s\n";
-  /*
-  for (unsigned int i = 0; i < resexp->tree.getNumberOfNodes(); ++i){
-    std::cout << "Node " << i ;
-    std::cout << "\n    Scalar: "  << resexp->tree.template getValue<dataType>(i);
-    std::cout << "\n    Origin: " << resexp->tree.getNode(i)->getOrigin();
-    std::cout << "\n    Is subtree: " << resexp->tree.getNode(i)->getIsSubtree() ;
+  
+  std::cout << "Shared pointer object:" << "\n";
+  for (unsigned int i = 0; i < resexpptr->tree.getNumberOfNodes(); ++i){
+    std::cout << "Node " << i ; 
+    std::cout << "\n    Scalar: "  << resexpptr->tree.template getValue<dataType>(i);
+    std::cout << "\n    Origin: " << resexpptr->tree.getNode(i)->getOrigin();
+    std::cout << "\n    Is subtree: " << resexpptr->tree.getNode(i)->getIsSubtree() ;
     std::cout << "\n    Children: ";
     std::vector<idNode> ccs2;
-    resexp->tree.getChildren(i,ccs2);
+    resexpptr->tree.getChildren(i,ccs2);
     for (idNode c: ccs2){
       std::cout << c << ", ";
     }
     std::cout << "\n";
   }
   std::cout << std::endl;
-  */
 
-  testingStats(resexp, &exp);
+  std::cout << "Shared pointer object dereferenced:" << "\n";
+  for (unsigned int i = 0; i < resexp.tree.getNumberOfNodes(); ++i){
+    std::cout << "Node " << i ; 
+    std::cout << "\n    Scalar: "  << resexp.tree.template getValue<dataType>(i);
+    std::cout << "\n    Origin: " << resexp.tree.getNode(i)->getOrigin();
+    std::cout << "\n    Is subtree: " << resexp.tree.getNode(i)->getIsSubtree() ;
+    std::cout << "\n    Children: ";
+    std::vector<idNode> ccs2;
+    resexp.tree.getChildren(i,ccs2);
+    for (idNode c: ccs2){
+      std::cout << c << ", ";
+    }
+    std::cout << "\n";
+  }
+  std::cout << std::endl;
+  
+
+  testingStats(resexpptr, &exp);
   
   // Verify parameters
   if(not UseFieldDataParameters) {
@@ -177,6 +195,11 @@ int ttkMergeTreeDistanceMatrix::run(
       normalizedWasserstein_ = false;
       keepSubtree_ = true;
       baseModule_ = 2;
+    } else if(Backend == 5){
+      MA_mditz = true;
+      keepSubtree_ = false;
+      normalizedWasserstein_ = false;
+      baseModule_ = 0;
     } else {
       baseModule_ = 0;
     }

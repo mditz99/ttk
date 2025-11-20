@@ -309,11 +309,22 @@ namespace ttk {
       int i,
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
+
+      bool MA_mditz_AltCase = MA_mditz and tree1->getNode(nodeI)->getIsSubtree();
       std::vector<ftm::idNode> children;
       tree1->getChildren(nodeI, children);
-      forestTable[i][0] = 0;
-      for(ftm::idNode const child : children)
-        forestTable[i][0] += treeTable[child + 1][0];
+      
+      if(MA_mditz_AltCase)
+        forestTable[i][0] = treeTable[children[0]][0];
+      else
+        forestTable[i][0] = 0;
+
+      for(ftm::idNode const child : children){
+        if(MA_mditz_AltCase)
+          forestTable[i][0] = std::min(forestTable[i][0], treeTable[child + 1][0]);
+        else
+          forestTable[i][0] += treeTable[child + 1][0];
+      }
     }
 
     template <class dataType>
@@ -323,7 +334,10 @@ namespace ttk {
       int i,
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
-      treeTable[i][0] = forestTable[i][0] + deleteCost<dataType>(tree1, nodeI);
+      if(MA_mditz and tree1->getNode(nodeI)->getIsSubtree())
+        treeTable[i][0] = forestTable[i][0];
+      else
+        treeTable[i][0] = forestTable[i][0] + deleteCost<dataType>(tree1, nodeI);
     }
 
     template <class dataType>
@@ -333,11 +347,21 @@ namespace ttk {
       int j,
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
+
+      bool MA_mditz_AltCase = MA_mditz and tree2->getNode(nodeI)->getIsSubtree();
       std::vector<ftm::idNode> children;
       tree2->getChildren(nodeJ, children);
-      forestTable[0][j] = 0;
+
+      if(MA_mditz_AltCase)
+        forestTable[0][j] = treeTable[0][children[0]];
+      else
+        forestTable[0][j] = 0;
+
       for(ftm::idNode const child : children)
-        forestTable[0][j] += treeTable[0][child + 1];
+        if(MA_mditz_AltCase)
+          forestTable[0][j] = std::min(forestTable[0][j], treeTable[0][child + 1]);
+        else
+          forestTable[0][j] += treeTable[0][child + 1];
     }
 
     template <class dataType>
@@ -347,7 +371,10 @@ namespace ttk {
       int j,
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
-      treeTable[0][j] = forestTable[0][j] + insertCost<dataType>(tree2, nodeJ);
+      if(MA_mditz and tree1->getNode(nodeI)->getIsSubtree())
+        treeTable[0][j] = forestTable[0][j];
+      else
+        treeTable[0][j] = forestTable[0][j] + insertCost<dataType>(tree2, nodeJ);
     }
 
     // Compute first or second term of forests and subtrees distance
