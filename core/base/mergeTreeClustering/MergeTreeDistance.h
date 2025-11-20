@@ -348,7 +348,7 @@ namespace ttk {
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
 
-      bool MA_mditz_AltCase = MA_mditz and tree2->getNode(nodeI)->getIsSubtree();
+      bool MA_mditz_AltCase = MA_mditz and tree2->getNode(nodeJ)->getIsSubtree();
       std::vector<ftm::idNode> children;
       tree2->getChildren(nodeJ, children);
 
@@ -371,7 +371,7 @@ namespace ttk {
       int j,
       std::vector<std::vector<dataType>> &treeTable,
       std::vector<std::vector<dataType>> &forestTable) {
-      if(MA_mditz and tree1->getNode(nodeI)->getIsSubtree())
+      if(MA_mditz and tree2->getNode(nodeJ)->getIsSubtree())
         treeTable[0][j] = forestTable[0][j];
       else
         treeTable[0][j] = forestTable[0][j] + insertCost<dataType>(tree2, nodeJ);

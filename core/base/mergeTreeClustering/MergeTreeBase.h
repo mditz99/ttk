@@ -863,13 +863,13 @@ namespace ttk {
       // verifyPairsTree(tree);
 
       if(MA_mditz){
-        mTree = *computeCompleteBranchDecomposition<dataType>(mTree);
+        mTree = *computeCompleteBranchDecomposition<dataType>(&mTree);
         tree = &(mTree.tree);
       }
 
       if(branchDecompositionT
          and (not isPersistenceDiagram_ or convertToDiagram_ or not MA_mditz))
-        tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
+        tree = &*computeBranchDecomposition<dataType>(tree, treeNodeMerged);
 
       // - Delete multi pers pairs
       if(deleteMultiPersPairs_ and not MA_mditz)
