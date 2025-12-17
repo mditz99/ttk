@@ -111,6 +111,25 @@ namespace ttk {
       return nodeId;
     }
 
+    //MA_mditz (handling DAG with MergeTree class). If aboveLevel, only regard parents with decremented level.
+    void FTMTree_MT::getParents_DAG(idNode nodeId,
+                                 std::vector<idNode> &parents, 
+                                 bool aboveLevel, std::vector<int>* levels) {
+      parents.clear();
+
+      int nodeLevel;
+      if (aboveLevel)
+        nodeLevel = levels->at(nodeId);
+
+      for(idSuperArc i = 0;
+          i < this->getNode(nodeId)->getNumberOfUpSuperArcs(); ++i) {        
+        idSuperArc const arcId = this->getNode(nodeId)->getUpSuperArcId(i);
+        idNode arcUpNode = this->getSuperArc(arcId)->getUpNodeId();
+        if(not aboveLevel or nodeLevel == levels->at(arcUpNode) + 1)
+        parents.push_back(arcUpNode);
+      }
+    }
+    
     void FTMTree_MT::getChildren(idNode nodeId,
                                  std::vector<idNode> &childrens) {
       childrens.clear();
@@ -144,6 +163,28 @@ namespace ttk {
 
     int FTMTree_MT::getRealNumberOfNodes() {
       return this->getNumberOfNodes() - this->getNumberOfNodeAlone();
+    }
+
+    //MA_mditz : This function expects that the instance is a DAG
+    int FTMTree_MT::getRealNumberOfSuperArcs(){
+      std::vector<bool> NodeDone(this->getNumberOfNodes(), false);
+      std::queue<idNode> queue;
+      queue.emplace(this->getRoot());
+      int num = 0;
+      while(!queue.empty()) {
+        idNode const node = queue.front();
+        queue.pop();
+        NodeDone[node] = true;
+
+        std::vector<idNode> children;
+        this->getChildren(node,children);
+        num += children.size();
+        for(idNode child : children){
+          if(not NodeDone[child]){
+            queue.emplace(child);}
+        }
+      }
+      return num;
     }
 
     void FTMTree_MT::getBranchOriginsFromThisBranch(
@@ -261,8 +302,12 @@ namespace ttk {
       return level;
     }
 
-    void FTMTree_MT::getAllNodeLevel(std::vector<int> &allNodeLevel) {
-      allNodeLevel = std::vector<int>(this->getNumberOfNodes());
+    //In case of MA_mditz, stores max level
+    void FTMTree_MT::getAllNodeLevel(std::vector<int> &allNodeLevel, bool MA_mditz) {
+      if (MA_mditz)
+        allNodeLevel = std::vector<int>(this->getNumberOfNodes(), INT_MIN);
+      else
+        allNodeLevel = std::vector<int>(this->getNumberOfNodes());
       std::queue<std::tuple<idNode, int>> queue;
       queue.emplace(this->getRoot(), 0);
       while(!queue.empty()) {
@@ -270,11 +315,35 @@ namespace ttk {
         queue.pop();
         idNode const node = std::get<0>(tup);
         int const level = std::get<1>(tup);
-        allNodeLevel[node] = level;
+        if (MA_mditz)
+          allNodeLevel[node] = std::max(level,allNodeLevel[node]);
+        else
+          allNodeLevel[node] = level;
+        
         std::vector<idNode> children;
         this->getChildren(node, children);
         for(idNode const child : children)
           queue.emplace(child, level + 1);
+      }
+    }
+
+    //MA_mditz
+    void FTMTree_MT::getAllNodeRangeLevel(std::vector<std::tuple<int,int>> &allNodeLevel) {
+      allNodeLevel = std::vector<std::tuple<int,int>>(this->getNumberOfNodes(), std::make_tuple(INT_MAX,0));
+      std::queue<std::tuple<idNode, int, int>> queue;
+      queue.emplace(this->getRoot(), 0,0);
+      while(!queue.empty()) {
+        auto tup = queue.front();
+        queue.pop();
+        idNode const node = std::get<0>(tup);
+        std::tuple<int,int> nodeRange = allNodeLevel[node];
+        int const minlevel = std::min(std::get<1>(tup), std::get<0>(nodeRange));
+        int const maxlevel = std::max(std::get<2>(tup), std::get<1>(nodeRange));
+        allNodeLevel[node] = std::make_tuple(minlevel,maxlevel);
+        std::vector<idNode> children;
+        this->getChildren(node, children);
+        for(idNode const child : children)
+          queue.emplace(child, std::get<1>(tup)+1 , std::get<2>(tup) +1);
       }
     }
 

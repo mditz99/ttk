@@ -24,7 +24,7 @@ namespace ttk {
   class MergeTreeBase : virtual public Debug {
   protected:
     //MA_mditz
-    bool  MA_mditz = true;
+    bool  MA_mditz = false;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -59,6 +59,7 @@ namespace ttk {
     bool parallelize_ = true;
     int nodePerTask_ = 32;
     bool cleanTree_ = true;
+
 
     // Clean correspondence
     std::vector<std::vector<int>> treesNodeCorr_;
@@ -821,6 +822,29 @@ namespace ttk {
     }
 
     template <class dataType>
+    void MA_mditz_print(ftm::MergeTree<dataType>& exp){
+      for (unsigned int i = 0; i < exp.tree.getNumberOfNodes(); ++i){
+        std::cout << "Node " << i ; 
+        std::cout << "\n    Scalar: "  << exp.tree.template getValue<dataType>(i);
+        std::cout << "\n    Origin: " << exp.tree.getNode(i)->getOrigin();
+        std::cout << "\n    Is subtree: " << exp.tree.getNode(i)->getIsSubtree() ;
+        std::cout << "\n    Children: ";
+        std::vector<ftm::idNode> ccs2;
+        exp.tree.getChildren(i,ccs2);
+        for (ftm::idNode c: ccs2){
+          std::cout << c << ", ";
+        }
+        std::cout << "\n    Parents: ";
+        exp.tree.getParents_DAG(i,ccs2);
+        for (ftm::idNode c: ccs2){
+          std::cout << c << ", ";
+        }
+        std::cout << "\n";
+      }
+      std::cout << std::endl;
+    }
+
+    template <class dataType>
     void preprocessingPipeline(ftm::MergeTree<dataType> &mTree,
                                double epsilonTree,
                                double epsilon2Tree,
@@ -832,15 +856,22 @@ namespace ttk {
                                std::vector<int> &nodeCorr,
                                bool deleteInconsistentNodes = true,
                                bool removeMergedSaddles = false) {
+      
       Timer t_proc;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
-
+      
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
-
+      
       // - Delete null persistence pairs and persistence thresholding
       persistenceThresholding<dataType>(tree, persistenceThreshold);
 
+      /*
+      std::cout << "Before merging saddle points according to epsilon:\n";
+      std::cout << "  n: " << tree->getNumberOfNodes();
+      std::cout << "\n  m: " << tree->getNumberOfSuperArcs()<< std::endl;
+      MA_mditz_print(mTree);
+      */
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
         tree->getNumberOfNodes());
@@ -861,25 +892,54 @@ namespace ttk {
 
       // - Compute branch decomposition
       // verifyPairsTree(tree);
-
       if(MA_mditz){
+        
+        std::cout << "Original MergeTree:\n";
+        std::cout << "  n: " << tree->getRealNumberOfNodes();
+        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
+        
+        //MA_mditz_print(mTree);
+        
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree);
         tree = &(mTree.tree);
+        
+        std::cout << "\n\nCBDT:\n";
+        std::cout << "  n: " << tree->getRealNumberOfNodes();
+        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs() << std::endl;
+        
+        //MA_mditz_print(mTree);
+        
       }
-
-      if(branchDecompositionT
-         and (not isPersistenceDiagram_ or convertToDiagram_ or not MA_mditz))
-        tree = &*computeBranchDecomposition<dataType>(tree, treeNodeMerged);
-
+      
+      if(not MA_mditz and branchDecompositionT
+         and (not isPersistenceDiagram_ or convertToDiagram_)){
+         
+        std::cout << "Original MergeTree:\n";
+        std::cout << "  n: " << tree->getRealNumberOfNodes();
+        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
+        //MA_mditz_print(mTree);
+        
+        tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
+        std::cout << "\n\nBDT:\n";
+        std::cout << "  n: " << tree->getRealNumberOfNodes();
+        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs() << std::endl;
+        /*
+        std::cout << "\nBDT:\n";
+        MA_mditz_print(mTree);
+        */
+      }
+      
       // - Delete multi pers pairs
       if(deleteMultiPersPairs_ and not MA_mditz)
         deleteMultiPersPairs<dataType>(tree, branchDecompositionT);
 
+      
       // - Remove min max pair
       // verifyPairsTree(tree);
       if(not useMinMaxPairT and not MA_mditz)
         dontUseMinMaxPair<dataType>(tree);
 
+      
       // - Epsilon 2 and 3 processing
       if(branchDecompositionT and not isPersistenceDiagram_ and not MA_mditz)
         persistenceMerging<dataType>(tree, epsilon2Tree, epsilon3Tree);
@@ -890,7 +950,7 @@ namespace ttk {
         tree = &(mTree.tree);
         reverseNodeCorr(tree, nodeCorr);
       }
-
+      
       // - Root number verification
       if(tree->getNumberOfRoot() != 1)
         printErr("preprocessingPipeline tree->getNumberOfRoot() != 1");

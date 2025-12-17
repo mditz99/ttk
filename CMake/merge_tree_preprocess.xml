@@ -59,6 +59,10 @@ panel_visibility="advanced">
                               mode="visibility"
                               property="Backend"
                               value="2" />
+      <PropertyWidgetDecorator type="GenericDecorator"
+                              mode="visibility"
+                              property="Backend"
+                              value="6" />	
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>
@@ -73,7 +77,7 @@ name="EpsilonTree1"
 command="SetEpsilonTree1"
 label="Epsilon 1 (%)"
 number_of_elements="1"
-default_values="5">
+default_values="0">
 <Hints>
   <PropertyWidgetDecorator type="CompositeDecorator">
     <Expression type="or">
@@ -97,6 +101,10 @@ default_values="5">
                               mode="visibility"
                               property="Backend"
                               value="4" />
+      <PropertyWidgetDecorator type="GenericDecorator"
+		              mode="visibility"
+		              property="Backend"
+		              value="6" />
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>
@@ -111,7 +119,7 @@ name="Epsilon2Tree1"
 command="SetEpsilon2Tree1"
 label="Epsilon 2 (%)"
 number_of_elements="1"
-default_values="95"
+default_values="100"
 panel_visibility="advanced">
   <Hints>
   <PropertyWidgetDecorator type="CompositeDecorator">
@@ -130,6 +138,10 @@ panel_visibility="advanced">
                               mode="visibility"
                               property="Backend"
                               value="0" />
+      <PropertyWidgetDecorator type="GenericDecorator"
+		              mode="visibility"
+		              property="Backend"
+		              value="6" />
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>
@@ -144,7 +156,7 @@ name="Epsilon3Tree1"
 command="SetEpsilon3Tree1"
 label="Epsilon 3 (%)"
 number_of_elements="1"
-default_values="90"
+default_values="100"
 panel_visibility="advanced">
   <Hints>
   <PropertyWidgetDecorator type="CompositeDecorator">
@@ -163,6 +175,10 @@ panel_visibility="advanced">
                               mode="visibility"
                               property="Backend"
                               value="0" />
+      <PropertyWidgetDecorator type="GenericDecorator"
+                              mode="visibility"
+                              property="Backend"
+                              value="6" />
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>
@@ -201,6 +217,10 @@ default_values="0">
                               mode="visibility"
                               property="Backend"
                               value="4" />
+      <PropertyWidgetDecorator type="GenericDecorator"
+                              mode="visibility"
+                              property="Backend"
+                              value="6" />
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>

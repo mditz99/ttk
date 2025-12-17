@@ -260,6 +260,8 @@ protected:
 
 namespace ttk{
   namespace ftm{
+    
+
     template <class dataType> 
     void testingStats(MergeTree<dataType>& completeBD, MergeTree<dataType>& inputMT){
       std::cout << "\n\n----------------------------------------------------------------------------\nStats of input Merge Tree\n";
@@ -775,6 +777,45 @@ namespace ttk{
         std::cout << "---------------------- End Recursion call " << pId << " " << cId << "-----------------------------" << std::endl;
         return completeBD;
       }
+    }
+
+
+    template <class dataType>
+    void executeAndPrint(MergeTree<dataType>& exp){
+      printTree(exp, true);
+
+      std::cout << "Scalars of Merge Tree: " << std::endl;
+      for (unsigned int i = 0; i < exp.tree.getNumberOfNodes(); ++i){
+        std::cout <<"   Node " << i << ":  " << exp.tree.template getValue<dataType>(i)<< "\n";
+      }
+      std::cout <<"\n\n";
+      
+      
+      std::vector<idNode> children;
+      exp.tree.getChildren(exp.tree.getRoot(),children);
+      
+      //Timer timer;
+      std::shared_ptr<MergeTree<dataType>> resexpptr=computeCompleteBranchDecomposition<dataType>(&exp, exp.tree.getRoot(), children[0]);
+      //std::cout << "Computation of CBD took " << timer.getElapsedTime() << "s\n";
+      
+      std::cout << "Shared pointer object:" << "\n";
+      for (unsigned int i = 0; i < resexpptr->tree.getNumberOfNodes(); ++i){
+        std::cout << "Node " << i ; 
+        std::cout << "\n    Scalar: "  << resexpptr->tree.template getValue<dataType>(i);
+        std::cout << "\n    Origin: " << resexpptr->tree.getNode(i)->getOrigin();
+        std::cout << "\n    Is subtree: " << resexpptr->tree.getNode(i)->getIsSubtree() ;
+        std::cout << "\n    Children: ";
+        std::vector<idNode> ccs2;
+        resexpptr->tree.getChildren(i,ccs2);
+        for (idNode c: ccs2){
+          std::cout << c << ", ";
+        }
+        std::cout << "\n";
+      }
+      std::cout << std::endl;
+      
+
+      testingStats(resexpptr, &exp);
     }
   }
 }

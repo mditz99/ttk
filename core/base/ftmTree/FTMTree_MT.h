@@ -646,6 +646,9 @@ namespace ttk {
       idNode getRoot();
 
       idNode getParentSafe(idNode nodeId);
+      
+      //MA_mditz CBD
+      void getParents_DAG(idNode nodeId, std::vector<idNode> &res, bool aboveLevel = false, std::vector<int>* levels = nullptr);
 
       void getChildren(idNode nodeId, std::vector<idNode> &res);
 
@@ -656,6 +659,9 @@ namespace ttk {
       int getNumberOfNodeAlone();
 
       int getRealNumberOfNodes();
+
+      //MA_mditz
+      int getRealNumberOfSuperArcs();
 
       template <class dataType>
       idNode getMergedRootOrigin();
@@ -680,7 +686,11 @@ namespace ttk {
 
       int getNodeLevel(idNode nodeId);
 
-      void getAllNodeLevel(std::vector<int> &res);
+      //MA_Mditz addition
+      void getAllNodeLevel(std::vector<int> &res, bool MA_mditz = false);
+      
+      //MA_mditz
+      void getAllNodeRangeLevel(std::vector<std::tuple<int,int>> &res);
 
       void getLevelToNode(std::vector<std::vector<idNode>> &res);
 
