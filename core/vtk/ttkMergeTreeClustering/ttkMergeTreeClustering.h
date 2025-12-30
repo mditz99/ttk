@@ -113,6 +113,9 @@ private:
   // bool useEarlyOut = true;
   int iterationLimit = 100;
   double NonMatchingWeight = 1.0;
+  //MA_mditz
+  bool Acceleration = true;
+  bool MA_mditz = false;
 
   // Output Options
   bool OutputTrees = true;
@@ -333,6 +336,13 @@ public:
     resetDataVisualization();
   }
   vtkGetMacro(NormalizedWasserstein, bool);
+
+  //MA_mditz
+  void SetAcceleration(bool acceleration) {
+    Acceleration = acceleration;
+    Modified();
+  }
+  vtkGetMacro(Acceleration, bool);
 
   void SetKeepSubtree(bool keepSubtree) {
     KeepSubtree = keepSubtree;

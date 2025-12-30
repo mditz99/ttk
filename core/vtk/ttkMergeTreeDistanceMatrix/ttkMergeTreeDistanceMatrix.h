@@ -201,6 +201,16 @@ public:
     return keepSubtree_;
   }
 
+  //MA_mditz
+  void SetAcceleration(bool acceleration) {
+    acceleration_ = acceleration;
+    Modified();
+  }
+  
+  bool GetAcceleration() {
+    return acceleration_;
+  }
+
   void SetDistanceSquaredRoot(bool distanceSquaredRoot) {
     distanceSquaredRoot_ = distanceSquaredRoot;
     Modified();

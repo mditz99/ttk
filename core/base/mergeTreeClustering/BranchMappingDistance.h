@@ -100,7 +100,9 @@ namespace ttk {
         dataType d2 = (b1 + d1) * 0.5;
         dataType db = b1 > b2 ? b1 - b2 : b2 - b1;
         dataType dd = d1 > d2 ? d1 - d2 : d2 - d1;
-        d = std::sqrt(db * db + dd * dd);
+        //d = std::sqrt(db * db + dd * dd);
+        //MA_mditz
+        d = db * db + dd * dd;
       } else if(n2 < 0) {
         dataType b1 = tree1->getValue<dataType>(n1);
         dataType d1 = tree1->getValue<dataType>(p1);
@@ -108,7 +110,8 @@ namespace ttk {
         dataType d2 = (b1 + d1) * 0.5;
         dataType db = b1 > b2 ? b1 - b2 : b2 - b1;
         dataType dd = d1 > d2 ? d1 - d2 : d2 - d1;
-        d = std::sqrt(db * db + dd * dd);
+        //d = std::sqrt(db * db + dd * dd);
+        d = db * db + dd * dd;
       } else {
         dataType b1 = tree1->getValue<dataType>(n1);
         dataType d1 = tree1->getValue<dataType>(p1);
@@ -116,7 +119,8 @@ namespace ttk {
         dataType d2 = tree2->getValue<dataType>(p2);
         dataType db = b1 > b2 ? b1 - b2 : b2 - b1;
         dataType dd = d1 > d2 ? d1 - d2 : d2 - d1;
-        d = std::sqrt(db * db + dd * dd);
+        //d = std::sqrt(db * db + dd * dd);
+        d = db * db + dd * dd;
       }
       return squared_ ? d * d : d;
     }

@@ -156,6 +156,7 @@ namespace ttk {
               
               //MA_mditz
               mergeTreeDistance.setMA_mditz(MA_mditz);
+              mergeTreeDistance.setAcceleration(acceleration_);
 
               mergeTreeDistance.setAssignmentSolver(assignmentSolverID_);
               mergeTreeDistance.setEpsilonTree1(epsilonTree1_);

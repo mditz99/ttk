@@ -124,6 +124,24 @@ default_values="0">
 </IntVectorProperty> 
 
 <IntVectorProperty
+name="Acceleration"
+command="SetAcceleration"
+label="Enable Acceleration (MA mditz)"
+number_of_elements="1"
+default_values="1">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="KeepSubtree"
+                           value="0" />
+  </Hints>
+  <Documentation>
+    Compute Dynamic Table Entry only if the ranges of the corresponding nodes intersect.
+  </Documentation>
+  <BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
+<IntVectorProperty
 name="AssignmentSolver"
 label="Assignment Solver"
 command="SetAssignmentSolver"

@@ -25,6 +25,7 @@ namespace ttk {
   protected:
     //MA_mditz
     bool  MA_mditz = false;
+    bool acceleration_ = true;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -71,8 +72,14 @@ namespace ttk {
                           // at the beginning of every msg
     }
 
+    //MA_mditz
     void setMA_mditz(bool b){
       MA_mditz = b;
+    }
+
+    //MA_mditz
+    void setAcceleration(bool b) {
+      acceleration_ = b;
     }
 
     void setAssignmentSolver(int assignmentSolver) {
@@ -860,7 +867,11 @@ namespace ttk {
       Timer t_proc;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
-      
+      std::cout << "Original MergeTree:\n";
+      std::cout << "  n: " << tree->getRealNumberOfNodes();
+      std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
+
+      //MA_mditz_print(mTree);
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
       
       // - Delete null persistence pairs and persistence thresholding
@@ -893,13 +904,6 @@ namespace ttk {
       // - Compute branch decomposition
       // verifyPairsTree(tree);
       if(MA_mditz){
-        
-        std::cout << "Original MergeTree:\n";
-        std::cout << "  n: " << tree->getRealNumberOfNodes();
-        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
-        
-        //MA_mditz_print(mTree);
-        
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree);
         tree = &(mTree.tree);
         
@@ -914,11 +918,6 @@ namespace ttk {
       if(not MA_mditz and branchDecompositionT
          and (not isPersistenceDiagram_ or convertToDiagram_)){
          
-        std::cout << "Original MergeTree:\n";
-        std::cout << "  n: " << tree->getRealNumberOfNodes();
-        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
-        //MA_mditz_print(mTree);
-        
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
         std::cout << "\n\nBDT:\n";
         std::cout << "  n: " << tree->getRealNumberOfNodes();
