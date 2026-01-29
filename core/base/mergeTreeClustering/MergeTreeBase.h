@@ -25,7 +25,8 @@ namespace ttk {
   protected:
     //MA_mditz
     bool  MA_mditz = false;
-    bool acceleration_ = true;
+    bool acceleration_ = false;
+    bool parallelFor = true;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -524,6 +525,7 @@ namespace ttk {
       //  O parent p
       //  |                      
       //  O child c
+
       if(numCcs ==  0) {
         ftm::MergeTree<dataType> in2 = ttk::ftm::createEmptyMergeTree<dataType>(2);
         std::shared_ptr<ftm::MergeTree<dataType>> completeBDptr = std::make_shared<ftm::MergeTree<dataType>>(in2);
@@ -544,10 +546,10 @@ namespace ttk {
         completeBDptr->scalarsValues = std::make_shared<std::vector<dataType>>(scalarsCBD);
         completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
         completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
-        //ftm::setTreeScalars<dataType>(*completeBDptr, scalarsCBD);
         return completeBDptr;
       }
       else{ 
+        
         //  Step case
         //      O parent p
         //      |
@@ -557,11 +559,15 @@ namespace ttk {
 
         //---------------------------------------------------------
         //Recurse
-        std::vector<std::shared_ptr<ftm::MergeTree<dataType>>> recursion_results;
+        std::vector<std::shared_ptr<ftm::MergeTree<dataType>>> recursion_results(numCcs);
+        
+        #ifdef TTK_ENABLE_OPENMP4
+        #pragma omp parallel for if(parallelFor)
+        #endif
         for(unsigned int i = 0; i < numCcs; ++i){
           
-          
-          recursion_results.push_back(computeCompleteBranchDecomposition<dataType>(inputMTptr, cId, ccs[i]));
+          recursion_results[i] = computeCompleteBranchDecomposition<dataType>(inputMTptr, cId, ccs[i]);
+          //recursion_results.push_back(computeCompleteBranchDecomposition<dataType>(inputMTptr, cId, ccs[i]));
           
         }    
         
@@ -881,8 +887,9 @@ namespace ttk {
       std::cout << "Before merging saddle points according to epsilon:\n";
       std::cout << "  n: " << tree->getNumberOfNodes();
       std::cout << "\n  m: " << tree->getNumberOfSuperArcs()<< std::endl;
-      MA_mditz_print(mTree);
       */
+      //MA_mditz_print(mTree);
+      
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
         tree->getNumberOfNodes());
@@ -922,10 +929,10 @@ namespace ttk {
         std::cout << "\n\nBDT:\n";
         std::cout << "  n: " << tree->getRealNumberOfNodes();
         std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs() << std::endl;
-        /*
+        
         std::cout << "\nBDT:\n";
-        MA_mditz_print(mTree);
-        */
+        //MA_mditz_print(mTree);
+        
       }
       
       // - Delete multi pers pairs

@@ -126,6 +126,7 @@ int ttkMergeTreeDistanceMatrix::run(
 
   MA_mditz = false;
   parallelize_ = true;
+  
   // Verify parameters
   if(not UseFieldDataParameters) {
     if(Backend == 0) {

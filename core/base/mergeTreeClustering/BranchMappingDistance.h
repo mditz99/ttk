@@ -122,7 +122,7 @@ namespace ttk {
         //d = std::sqrt(db * db + dd * dd);
         d = db * db + dd * dd;
       }
-      return squared_ ? d * d : d;
+      return d;//squared_ ? d * d : d;
     }
 
     template <class dataType>

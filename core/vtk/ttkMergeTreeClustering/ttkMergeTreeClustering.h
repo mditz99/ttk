@@ -114,7 +114,7 @@ private:
   int iterationLimit = 100;
   double NonMatchingWeight = 1.0;
   //MA_mditz
-  bool Acceleration = true;
+  bool Acceleration = false;
   bool MA_mditz = false;
 
   // Output Options
@@ -343,6 +343,7 @@ public:
     Modified();
   }
   vtkGetMacro(Acceleration, bool);
+
 
   void SetKeepSubtree(bool keepSubtree) {
     KeepSubtree = keepSubtree;
