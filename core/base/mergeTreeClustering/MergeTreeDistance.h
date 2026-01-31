@@ -617,13 +617,15 @@ namespace ttk {
         nRows, std::vector<dataType>(nCols));
       
       //MA_mditz
+      /*
       for(int i = 0; i < nRows; i++){
         for(int j = 0; j < nCols; j++){
           treeTable[i][i] = std::numeric_limits<dataType>::max();
           forestTable[i][i] = std::numeric_limits<dataType>::max();
         }
       }
-      
+      */
+     
       // Backtracking tables (output matching)
       std::vector<std::vector<std::tuple<int, int>>> treeBackTable(
         nRows, std::vector<std::tuple<int, int>>(nCols));
