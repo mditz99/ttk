@@ -220,13 +220,15 @@ int ttkMergeTreeDistanceMatrix::run(
     printMsg("PathMetric: " + metric);
   }
 
+  std::cout << "[MethodStart] Backend: " << Backend << "\n";
   Timer timer;
   // --- Call base
   std::vector<std::vector<double>> treesDistMat(
     numInputs, std::vector<double>(numInputs));
   execute<dataType>(intermediateTrees, intermediateTrees2, treesDistMat);
-  std::cout << "After execute in vtk layer: " << timer.getElapsedTime() << "s\n";
-
+  std::cout << "[Time] TotalTime: " << timer.getElapsedTime() << "\n";
+  std::cout << "[Time] MaxThreads: " << omp_get_max_threads() << "\n";
+  std::cout << "[MethodEnd] Backend: " << Backend << "\n";
   // --- Create output
   auto treesDistTable = vtkTable::GetData(outputVector);
 

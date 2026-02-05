@@ -141,6 +141,36 @@ default_values="0">
   <BooleanDomain name="bool"/>
 </IntVectorProperty> 
 
+<IntVectorProperty
+name="StatsTest"
+command="SetStatsTest"
+label="StatsTest"
+number_of_elements="1"
+default_values="0">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="KeepSubtree"
+                           value="0" />
+  </Hints>
+  <BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
+<IntVectorProperty
+name="ParallelFor"
+command="SetParallelFor"
+label="ParallelFor"
+number_of_elements="1"
+default_values="0">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="KeepSubtree"
+                           value="0" />
+  </Hints>
+  <BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
 
 <IntVectorProperty
 name="AssignmentSolver"

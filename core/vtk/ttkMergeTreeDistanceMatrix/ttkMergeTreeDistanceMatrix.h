@@ -211,6 +211,26 @@ public:
     return acceleration_;
   }
 
+  //MA_mditz
+  void SetStatsTest(bool b) {
+    statsTest = b;
+    Modified();
+  }
+  
+  bool GetStatsTest() {
+    return statsTest;
+  }
+
+  //MA_mditz
+  void SetParallelFor(bool b) {
+    parallelFor = b;
+    Modified();
+  }
+  
+  bool GetParallelFor() {
+    return parallelFor;
+  }
+
   void SetDistanceSquaredRoot(bool distanceSquaredRoot) {
     distanceSquaredRoot_ = distanceSquaredRoot;
     Modified();

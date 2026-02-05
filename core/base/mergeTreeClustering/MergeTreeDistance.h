@@ -80,7 +80,7 @@ namespace ttk {
     // std::map<int, int> assignmentProblemSize, assignmentProblemIter;
 
     bool testing_ = true;
-    bool statsTest = false;
+    
 
     // Parallel version data
     std::vector<std::vector<ftm::idNode>> tree2LevelToNode_;
@@ -285,9 +285,8 @@ namespace ttk {
         forestTerm3 = forestAssignmentProblem<dataType>(
           tree1, tree2, treeTable, children1, children2, forestAssignment);
         
-        //std::cout << i-1<< ","<<j-1 << " after forestassignmentproblem" << std::endl;
         if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
-          
+          std::cout << "[StatsTest] AssInst: " << children1.size()*children2.size() << "\n"; 
           t_assignment_time_ += t_assignment.getElapsedTime();
           sizeAssignment += children1.size()*children2.size();
           numAssignment += 1;
@@ -334,7 +333,6 @@ namespace ttk {
         // If one of the forest is empty we get back to equation 8 or 10
         forestTable[i][j] = (children1.size() == 0) ? forestTable[0][j] : forestTable[i][0];
       }
-      //std::cout << i-1<< ","<<j-1 << " in forest end" << std::endl;
     }
 
     // ------------------------------------------------------------------------
@@ -413,7 +411,6 @@ namespace ttk {
         treeTable[0][j] = forestTable[0][j];
       else
         treeTable[0][j] = forestTable[0][j] + insertCost<dataType>(tree2, nodeJ);
-      //std::cout <<"D(-1," << nodeJ << ") = " << treeTable[0][j] << " computeEmptyToSubtree with "<<j << "\n";
     }
 
     // Compute first or second term of forests and subtrees distance
@@ -454,11 +451,9 @@ namespace ttk {
       dataType tempMin = std::numeric_limits<dataType>::max();
       ftm::idNode bestIdNode1 = 0;
       ftm::idNode bestIdNode2 = 0;
-      //std::cout << "Single pairing: ";
       for(ftm::idNode child1 : children1) {
         for(ftm::idNode child2 : children2) {
           dataType temp = treeTable[child1 + 1][child2 +1];
-          //std::cout << child1 << "," << child2 << "("<<treeTable[child1+1][child2+1]<<")";
           if(temp < tempMin) {
             tempMin = temp;
             bestIdNode1 = child1;
@@ -466,7 +461,6 @@ namespace ttk {
           }
         }
       }
-      //std::cout << std::endl; 
       return std::make_tuple(tempMin, bestIdNode1, bestIdNode2);
     }
 
@@ -483,7 +477,6 @@ namespace ttk {
       std::vector<std::vector<std::tuple<int, int>>> &treeBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
-      //std::cout << nodeI<< ","<<nodeJ << " in subtree begin" << std::endl;
       dataType treeTerm3;
       
       std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm;
@@ -494,12 +487,9 @@ namespace ttk {
       if(not keepSubtree_) {
         // Compute table value
         if(not MA_mditz or (not tree1->getNode(nodeI)->getIsSubtree() and not tree2->getNode(nodeJ)->getIsSubtree())){
-          //std::cout << nodeI<< ","<<nodeJ << " in treeTerm if" << std::endl;
-          //std::cout << nodeI <<"," <<nodeJ<< "treeTerm "<< treeTerm3 << std::endl;
           treeTable[i][j] = treeTerm3;
           // Add backtracking information
           treeBackTable[i][j] = std::make_tuple(i, j);
-          //std::cout <<"D(" << nodeI << "," << nodeJ << ") = " << treeTerm3 << " via term 3\n";
         } else if (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree()){
           Timer timer;
           singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
@@ -542,7 +532,6 @@ namespace ttk {
           treeBackTable[i][j] = std::make_tuple(i, std::get<1>(treeCoTerm1));
         }
       }
-      //std::cout << nodeI<< ","<<nodeJ << " in subtree end" << std::endl;
     }
 
     // --------------------------------------------------------------------------------
@@ -644,38 +633,13 @@ namespace ttk {
         tree2->getLevelToNode(tree2LevelToNode_);
       }
       
-      
-      //MA_mditz
-      /*
-      for(int i = 0; i < nRows-1; i++){
-        std::cout << "Tree 1 Range of "<< i << ": "<< std::get<0>(tree1Range_[i])<<" "<< std::get<1>(tree1Range_[i])<<std::endl;
-      }
-
-      for(int i = 0; i < nCols-1; i++){
-        std::cout << "Tree 2 Range of "<< i << ": "<< std::get<0>(tree2Range_[i])<<" "<< std::get<1>(tree2Range_[i])<<std::endl;
-      }
-      */
       // ---------------------
       // ----- Compute edit distance
       // --------------------
       Timer EDtime;
       computeEditDistance(tree1, tree2, treeTable, forestTable, treeBackTable,
                           forestBackTable, nRows, nCols);
-      if(statsTest) std::cout << nodesDone << " pairs out of " << (nRows -1 )*(nCols -1) <<" (|T1|*|T2|) computed" << std::endl;
-      //MA_mditz
-      /*
-      for(int i = 0; i < nRows; i++){
-        for(int j = 0; j < nCols; j++){
-          std::cout << "D( " << i -1 <<", " << j-1 <<") = " << treeTable[i][j] << "\n";
-        }
-      }
-
-      for(int i = 0; i < nRows; i++){
-        for(int j = 0; j < nCols; j++){
-          std::cout << "F( " << i -1 <<", " << j-1 <<") = " << forestTable[i][j] << "\n";
-        }
-      }
-      */
+      //std::cout << nodesDone << " pairs out of " << (nRows -1 )*(nCols -1) <<" (|T1|*|T2|) computed" << std::endl;
       
       dataType distance = treeTable[indR][indC];
 
@@ -859,20 +823,17 @@ namespace ttk {
         parallelEditDistance(tree1, tree2, treeTable, forestTable,
                              treeBackTable, forestBackTable, nRows, nCols);
         
-        if(MA_mditz and statsTest){
+        if(statsTest){
           
-          std::cout <<"Parallelization chosen for Edit Distance with" << omp_get_max_threads()<< std::endl;
-          std::cout << "Nodes per task: "<< nodePerTask_<<std::endl;
-          std::cout << "Time spent looking at parents: " << itParentTime << std::endl;
-          std::cout << "Time spent computing DPT entries: " << computeTime << std::endl;
-          std::cout << "Assignment stats: ";
-          std::cout << "\n  Num: "<< numAssignment;
-          std::cout << "\n  Total load: "<< sizeAssignment;
-          std::cout << "\n  Average load: "<< sizeAssignment/numAssignment;
-          std::cout << "\n  Total time: "<< t_assignment_time_;
-          std::cout << "\n  Average time: "<< t_assignment_time_/numAssignment;
-          std::cout << "\n  Maxdegree 1st tree: "<< maxdegree1Assignment;
-          std::cout << "\n  Maxdegree 2nd tree: "<< maxdegree2Assignment <<"\n\n";
+          std::cout << "[StatsTest] NodesPerTask: "<< nodePerTask_<<"\n";
+          std::cout << "[StatsTest] ParentItTime: " << itParentTime <<"\n";
+          std::cout << "[StatsTest] DPEntryTime: " << computeTime <<"\n";
+          std::cout << "[StatsTest] AssNum: "<< numAssignment <<"\n";
+          std::cout << "[StatsTest] AssLoad: "<< sizeAssignment<<"\n";
+          std::cout << "[StatsTest] AssTime: "<< t_assignment_time_<<"\n";
+          std::cout << "[StatsTest] AssCBD1deg: "<< maxdegree1Assignment<<"\n";;
+          std::cout << "[StatsTest] AssCBD2deg:  "<< maxdegree2Assignment <<"\n";
+          /*
           std::cout << "Single pairing stats: ";
           std::cout << "\n  Num: "<< numSinglePairing;
           std::cout << "\n  Total load: "<< sizeSinglePairing;
@@ -881,10 +842,10 @@ namespace ttk {
           std::cout << "\n  Average time: "<< timeSinglePairing/numSinglePairing;
           std::cout << "\n  Maxdegree 1st tree: "<< maxdegree1SinglePairing;
           std::cout << "\n  Maxdegree 2nd tree: "<< maxdegree2SinglePairing <<"\n\n";
+          */
         }
       } else {
         // Distance T1 to empty tree
-        //std::cout << "T1 => EMPTY" << std::endl;
         //MA_mditz
         std::vector<std::vector<bool>> entryDone(nRows, std::vector<bool>(nCols, false));
         classicEditDistance(tree1, tree2, true, true, tree1->getRoot(),
@@ -893,12 +854,10 @@ namespace ttk {
         if(onlyEmptyTreeDistance_ and not MA_mditz)
           return;
         // Distance T2 to empty tree
-        //std::cout << "EMPTY => T2" << std::endl;
         classicEditDistance(tree1, tree2, false, true, tree1->getRoot(),
                             tree2->getRoot(), treeTable, forestTable,
                             treeBackTable, forestBackTable, nRows, nCols,entryDone);
         // Distance T1 to T2
-        //std::cout << "T1 => T2" << std::endl;
         classicEditDistance(tree1, tree2, true, false, tree1->getRoot(),
                             tree2->getRoot(), treeTable, forestTable,
                             treeBackTable, forestBackTable, nRows, nCols,entryDone);
@@ -1447,12 +1406,9 @@ namespace ttk {
             if(MA_mditz){
               std::vector<ftm::idNode> DAGparents;
               tree->getParents_DAG(nodeT,DAGparents);
-              //std::cout << "(" << isTree1 <<")" << " direct parents of " << nodeT <<": ";
               for(ftm::idNode p : DAGparents){
-                //std::cout << p << ", ";
                 parentQueue.emplace(p);
               }
-              //std::cout << std::endl;
             }
             else  
               parentQueue.emplace(tree->getParentSafe(nodeT));

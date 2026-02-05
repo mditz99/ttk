@@ -116,6 +116,8 @@ private:
   //MA_mditz
   bool Acceleration = false;
   bool MA_mditz = false;
+  bool statsTest = false;
+  bool parallelFor = false;
 
   // Output Options
   bool OutputTrees = true;
@@ -343,6 +345,20 @@ public:
     Modified();
   }
   vtkGetMacro(Acceleration, bool);
+
+  //MA_mditz
+  void SetStatsTest(bool b) {
+    statsTest = b;
+    Modified();
+  }
+  vtkGetMacro(statsTest, bool);
+
+   //MA_mditz
+  void SetParallelFor(bool b) {
+    parallelFor = b;
+    Modified();
+  }
+  vtkGetMacro(parallelFor, bool);
 
 
   void SetKeepSubtree(bool keepSubtree) {

@@ -27,6 +27,7 @@ namespace ttk {
     bool  MA_mditz = false;
     bool acceleration_ = false;
     bool parallelFor = true;
+    bool statsTest = false;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -81,6 +82,16 @@ namespace ttk {
     //MA_mditz
     void setAcceleration(bool b) {
       acceleration_ = b;
+    }
+
+    //MA_mditz
+    void setStatsTest(bool b){
+      statsTest = b;
+    }
+
+    //MA_mditz
+    void setParallelFor(bool b){
+      parallelFor = b;
     }
 
     void setAssignmentSolver(int assignmentSolver) {
@@ -386,6 +397,7 @@ namespace ttk {
       ftm::idNode const treeRoot = tree->getRoot();
       dataType maxPers = tree->getMaximumPersistence<dataType>();
       dataType threshold = persistenceThresholdT / 100 * maxPers;
+      std::cout <<"[PersistenceThreshold] float: " << threshold << "\n";
 
       dataType secondMax = tree->getSecondMaximumPersistence<dataType>();
       bool keepOneZeroPersistencePair = (secondMax == 0 or maxPers == 0);
@@ -873,22 +885,19 @@ namespace ttk {
       Timer t_proc;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
-      std::cout << "Original MergeTree:\n";
-      std::cout << "  n: " << tree->getRealNumberOfNodes();
-      std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs()<<std::endl;
-
+      if (statsTest){
+        std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
+        std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
+      }
       //MA_mditz_print(mTree);
+      
+
+      
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
       
       // - Delete null persistence pairs and persistence thresholding
       persistenceThresholding<dataType>(tree, persistenceThreshold);
-
-      /*
-      std::cout << "Before merging saddle points according to epsilon:\n";
-      std::cout << "  n: " << tree->getNumberOfNodes();
-      std::cout << "\n  m: " << tree->getNumberOfSuperArcs()<< std::endl;
-      */
-      //MA_mditz_print(mTree);
+      std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
       
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
@@ -913,25 +922,20 @@ namespace ttk {
       if(MA_mditz){
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree);
         tree = &(mTree.tree);
-        
-        std::cout << "\n\nCBDT:\n";
-        std::cout << "  n: " << tree->getRealNumberOfNodes();
-        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs() << std::endl;
-        
-        //MA_mditz_print(mTree);
-        
+        if (statsTest){
+          std::cout << "[StatsTest] CBDn: " << tree->getRealNumberOfNodes() << "\n";
+          std::cout << "[StatsTest] CBDm: " << tree->getRealNumberOfSuperArcs() << "\n";
+        }
       }
       
       if(not MA_mditz and branchDecompositionT
          and (not isPersistenceDiagram_ or convertToDiagram_)){
          
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
-        std::cout << "\n\nBDT:\n";
-        std::cout << "  n: " << tree->getRealNumberOfNodes();
-        std::cout << "\n  m: " << tree->getRealNumberOfSuperArcs() << std::endl;
-        
-        std::cout << "\nBDT:\n";
-        //MA_mditz_print(mTree);
+        if (statsTest){
+          std::cout << "[StatsTest] BDTn: " << tree->getRealNumberOfNodes() << "\n";
+          std::cout << "[StatsTest] BDTm: " << tree->getRealNumberOfSuperArcs() << "\n";
+        }
         
       }
       
@@ -964,6 +968,7 @@ namespace ttk {
       // - Time printing
       // verifyPairsTree(tree);
       auto t_preproc_time = t_proc.getElapsedTime();
+      std::cout << "[Time] PreProcTimePF"<<parallelFor<<": " << t_preproc_time << "\n";
       std::stringstream ss;
       ss << "TIME PREPROC.   = " << t_preproc_time;
       printMsg(ss.str(), debug::Priority::VERBOSE);

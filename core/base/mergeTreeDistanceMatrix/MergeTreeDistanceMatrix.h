@@ -94,12 +94,10 @@ namespace ttk {
                  std::vector<std::vector<double>> &distanceMatrix) {
       treesNodeCorr_.resize(trees.size());
       for(unsigned int i = 0; i < trees.size(); ++i) {
-        Timer timer;
         preprocessingPipeline<dataType>(
           trees[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
           baseModule_ == 0 ? branchDecomposition_ : false, useMinMaxPair_, true,
           treesNodeCorr_[i], true, baseModule_ == 2);
-        std::cout << "Preprocessing Pipeline: " << timer.getElapsedTime() << "s\n";
       }
       executePara<dataType>(trees, distanceMatrix);
       if(trees2.size() != 0) {
@@ -157,6 +155,8 @@ namespace ttk {
               //MA_mditz
               mergeTreeDistance.setMA_mditz(MA_mditz);
               mergeTreeDistance.setAcceleration(acceleration_);
+              mergeTreeDistance.setStatsTest(statsTest);
+              mergeTreeDistance.setParallelFor(parallelFor);
 
               mergeTreeDistance.setAssignmentSolver(assignmentSolverID_);
               mergeTreeDistance.setEpsilonTree1(epsilonTree1_);
@@ -192,7 +192,7 @@ namespace ttk {
               Timer timer;
               distanceMatrix[i][j] = mergeTreeDistance.execute<dataType>(
                 trees[i], trees[j], outputMatching);
-              std::cout << "Distance execute: " << timer.getElapsedTime() << "s\n";
+              std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";
             } else if(baseModule_ == 1) {
               BranchMappingDistance branchDist;
               branchDist.setBaseMetric(branchMetric_);
@@ -210,7 +210,7 @@ namespace ttk {
               branchDist.setSaveTree(false);
               Timer timer;
               dataType dist = branchDist.execute<dataType>(trees[i], trees[j]);
-              std::cout << "Distance execute: " << timer.getElapsedTime() << "s\n";
+              std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";
               distanceMatrix[i][j] = static_cast<double>(dist);
             } else if(baseModule_ == 2) {
               PathMappingDistance pathDist;
