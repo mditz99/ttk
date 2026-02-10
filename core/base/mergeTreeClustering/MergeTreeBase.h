@@ -885,10 +885,7 @@ namespace ttk {
       Timer t_proc;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
-      if (statsTest){
-        std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
-        std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
-      }
+      
       //MA_mditz_print(mTree);
       
 
@@ -917,6 +914,12 @@ namespace ttk {
         }
       }
 
+
+      if (statsTest){
+        std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
+        std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
+      }
+      
       // - Compute branch decomposition
       // verifyPairsTree(tree);
       if(MA_mditz){
