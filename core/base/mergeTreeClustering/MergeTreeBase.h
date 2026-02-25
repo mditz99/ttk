@@ -1251,9 +1251,7 @@ namespace ttk {
       
       if(MA_mditz){
         if (shortTreeStats) {
-          std::cout << "\n\n========================================\n"
-          << "Preprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n"
-          << "========================================\n";
+          std::cout << "\nPreprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n";
         }
         if (cbdDebug) {
            std::cout << "\n\n========================================\n"
@@ -1265,6 +1263,7 @@ namespace ttk {
         
         preprocessed_MT = ftm::copyMergeTree(mTree);
 
+        /*
         if (cbdDebug) {
           std::cout << "\n\n========================================\n"
           << "     getNodePersistences     \n"
@@ -1274,7 +1273,7 @@ namespace ttk {
             std::cout << "Node " << i << ": " << mTree.tree.template getNodePersistence<dataType>(i) << "\n";
           }
         }
-
+        */
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
         if (shortTreeStats) {
@@ -1782,6 +1781,33 @@ namespace ttk {
                                                     ftm::FTMTree_MT *MT2
                                                     ) {
 
+      if (cbdDebug) {
+        std::cout << "\ndataMap1 with size "<< dataMap1.size()<< " : ";
+        int i=0;
+        for (auto t : dataMap1) {
+          std::cout << "(" <<i <<";"<< t <<"), ";
+          i++;
+        }
+
+        std::cout << "\ndataMap2 with size "<< dataMap2.size()<< " : ";
+        i=0;
+        for (auto t : dataMap2) {
+          std::cout << "(" <<i <<";"<< t <<"), ";
+          i++;
+        }
+        /*
+        std::cout << "\nOrigins1 with size "<< MT1->getNumberOfNodes()<< " : ";
+        for(unsigned int nId = 0; nId < MT1->getNumberOfNodes(); ++nId){
+          std::cout << "(" << nId <<";"<< MT1->getNode(nId)->getOrigin() <<"), ";
+        }
+
+        std::cout << "\nOrigins2 with size "<< MT2->getNumberOfNodes()<< " : ";
+        for(unsigned int nId = 0; nId < MT2->getNumberOfNodes(); ++nId){
+          std::cout << "(" << nId <<";"<< MT2->getNode(nId)->getOrigin() <<"), ";
+        }
+        */
+      }
+
       std::vector<std::tuple<ftm::idNode, ftm::idNode, double>> toAdd;
 
       unsigned int numNodesCBD1 = dataMap1.size();
@@ -1823,31 +1849,7 @@ namespace ttk {
       if (cbdDebug) {
         std::cout << "\nMatching converted from CBD to Merge Tree with size "<< outputMatching.size()<< " : ";
         for (auto t : outputMatching) {
-          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
-        }
-
-        std::cout << "\ndataMap1 with size "<< dataMap1.size()<< " : ";
-        int i=0;
-        for (auto t : dataMap1) {
-          std::cout << "(" <<i <<";"<< t <<"), ";
-          i++;
-        }
-
-        std::cout << "\ndataMap2 with size "<< dataMap2.size()<< " : ";
-        i=0;
-        for (auto t : dataMap2) {
-          std::cout << "(" <<i <<";"<< t <<"), ";
-          i++;
-        }
-
-        std::cout << "\nOrigins1 with size "<< MT1->getNumberOfNodes()<< " : ";
-        for(unsigned int nId = 0; nId < MT1->getNumberOfNodes(); ++nId){
-          std::cout << "(" << nId <<";"<< MT1->getNode(nId)->getOrigin() <<"), ";
-        }
-
-        std::cout << "\nOrigins2 with size "<< MT2->getNumberOfNodes()<< " : ";
-        for(unsigned int nId = 0; nId < MT2->getNumberOfNodes(); ++nId){
-          std::cout << "(" << nId <<";"<< MT2->getNode(nId)->getOrigin() <<"), ";
+          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
         }
       }
     }

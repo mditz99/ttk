@@ -739,12 +739,6 @@ namespace ttk {
         computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
                               outputMatching, indR, indC);
 
-      if (postprocess_ && cbdDebug) {
-        std::cout << "\nMatching on CBD with size "<< outputMatching.size()<< " : ";
-        for (auto t : outputMatching) {
-          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
-        }
-      }
       
       return distance;
     }
@@ -833,14 +827,34 @@ namespace ttk {
       tree1 = &(mTree1Int.tree);
       tree2 = &(mTree2Int.tree);
 
+      if (cbdDebug) {
+        std::cout << "\nAfter preprocessing dataMap1 with size "<< dataMap1.size()<< " : ";
+        int i=0;
+        for (auto t : dataMap1) {
+          std::cout << "(" <<i <<";"<< t <<"), ";
+          i++;
+        }
 
+        std::cout << "\nAfter preprocessing dataMap2 with size "<< dataMap2.size()<< " : ";
+        i=0;
+        for (auto t : dataMap2) {
+          std::cout << "(" <<i <<";"<< t <<"), ";
+          i++;
+        }
+
+      }
       // ---------------------
       // ----- Compute Distance
       // --------------------
       dataType distance
         = computeDistance<dataType>(tree1, tree2, outputMatching);
 
-      
+      if (cbdDebug) {
+        std::cout << "\nMatching after compute Distance "<< outputMatching.size()<< " : ";
+        for (auto t : outputMatching) {
+          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
+        }
+      }
       // ---------------------
       // ----- Postprocessing
       // --------------------
@@ -862,6 +876,12 @@ namespace ttk {
           if(branchDecomposition_)
           convertBranchDecompositionMatching<dataType>(
             tree1, tree2, outputMatching);
+        }
+      }
+      if (cbdDebug) {
+        std::cout << "\nMatching after postprocessing "<< outputMatching.size()<< " : ";
+        for (auto t : outputMatching) {
+          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
         }
       }
       // std::cout << "TIME COMP.MATCH. = " << t_match_time << std::endl;
