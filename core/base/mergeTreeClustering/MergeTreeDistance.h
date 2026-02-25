@@ -872,14 +872,23 @@ namespace ttk {
         }
 
       }
-      if(tree1Idx != -1)
-        std::cout <<"("<< tree1Idx << "," << tree2Idx <<") starts computeDistance "<<std::endl;
+      if(tree1Idx != -1 && tree2Idx != -1){
+        std::stringstream ss;
+        ss <<"("<< tree1Idx << "," << tree2Idx <<") starts computeDistance\n";
+        std::cout << ss.str();
+      }
       // ---------------------
       // ----- Compute Distance
       // --------------------
       dataType distance
         = computeDistance<dataType>(tree1, tree2, outputMatching);
-      std::cout <<"("<< tree1Idx << "," << tree2Idx <<") ends computeDistance "<<std::endl;
+      
+      if(tree1Idx != -1 && tree2Idx != -1){
+        std::stringstream ss;
+        ss <<"("<< tree1Idx << "," << tree2Idx <<") ended computeDistance\n";
+        std::cout << ss.str();
+      }
+
       if (cbdDebug) {
         std::cout << "\n========================================\n";
         std::cout << "Tree1:\n";

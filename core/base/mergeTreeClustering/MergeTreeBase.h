@@ -1216,6 +1216,7 @@ namespace ttk {
                               ) {
       
       Timer t_proc;
+      std::stringstream ss;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
       size_t inputTreeSize = tree->getRealNumberOfNodes();
@@ -1283,7 +1284,10 @@ namespace ttk {
             } 
           }
           */
-          std::cout << "[" <<treeIdx <<"]:|MTinput|:" << inputTreeSize << ";|MTprocessed|:" << preprocTreeSize<< ";|CBD|:" << tree->getNumberOfNodes()<<";|R(CBD)|:"<<tree->getNumberOfSuperArcs()<<std::endl; 
+          ss << "[" <<treeIdx <<"]:|MTinput|:" << inputTreeSize << ";|MTprocessed|:" << preprocTreeSize<< ";|CBD|:" << tree->getNumberOfNodes()<<";|R(CBD)|:"<<tree->getNumberOfSuperArcs(); 
+          std::cout << ss.str() << std::endl;
+          ss.str("");
+          ss.clear();
           
         }
 
@@ -1310,7 +1314,9 @@ namespace ttk {
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
         
         if (shortTreeStats) {
-          std::cout << "[" <<treeIdx <<"]:|MT|:" << preprocTreeSize << ";|BDT|:" << tree->getRealNumberOfNodes()<<std::endl;
+          
+          ss << "[" <<treeIdx <<"]:|MT|:" << preprocTreeSize << ";|BDT|:" << tree->getRealNumberOfNodes() << "\n";
+          std::cout << ss.str() ;
         }
         if (cbdDebug) {
           std::cout << "BDT:\n";
@@ -1353,12 +1359,12 @@ namespace ttk {
       // - Time printing
       // verifyPairsTree(tree);
       auto t_preproc_time = t_proc.getElapsedTime();
-      std::cout << "[Time] PreProcTime"<<parallelFor<<": " << t_preproc_time << "\n";
-      std::stringstream ss;
       ss << "TIME PREPROC.   = " << t_preproc_time;
-
-
       printMsg(ss.str(), debug::Priority::VERBOSE);
+      ss.str("");
+      ss.clear();
+      ss << "[Time] PreProcTime: " << t_preproc_time <<"\n";
+      std::cout << ss.str() ;
     }
 
     

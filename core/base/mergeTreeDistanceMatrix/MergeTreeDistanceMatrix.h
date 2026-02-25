@@ -208,7 +208,9 @@ namespace ttk {
               Timer timer;
               distanceMatrix[i][j] = mergeTreeDistance.execute<dataType>(
                 trees[i], trees[j], outputMatching,i,j);
-              std::cout << "[Time] DTime: " << timer.getElapsedTime() << std::endl;
+              std::stringstream ss;
+              ss << "[Time] DTime: " << timer.getElapsedTime() << "\n";
+              std::cout << ss.str();
             } else if(baseModule_ == 1) {
               BranchMappingDistance branchDist;
               branchDist.setBaseMetric(branchMetric_);
@@ -226,7 +228,9 @@ namespace ttk {
               branchDist.setSaveTree(false);
               Timer timer;
               dataType dist = branchDist.execute<dataType>(trees[i], trees[j]);
-              std::cout << "[Time] DTime: " << timer.getElapsedTime() << std::endl;
+              std::stringstream ss;
+              ss << "[Time] DTime: " << timer.getElapsedTime() << "\n";
+              std::cout << ss.str() ;
               distanceMatrix[i][j] = static_cast<double>(dist);
             } else if(baseModule_ == 2) {
               PathMappingDistance pathDist;
