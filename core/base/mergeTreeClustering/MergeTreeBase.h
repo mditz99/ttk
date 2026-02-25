@@ -34,7 +34,7 @@ namespace ttk {
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
-    bool cbdDebug = true;
+    bool cbdDebug = false;
     bool shortTreeStats = true;
     bool postprocess_ = true;
 
@@ -569,6 +569,7 @@ namespace ttk {
           subtrees.push_back(i);
         } 
       }
+      
 
       //#pragma omp parallel for schedule(dynamic, 64)
       for (ftm::idNode i : subtrees) {
@@ -1242,7 +1243,7 @@ namespace ttk {
       if(MA_mditz){
         if (shortTreeStats) {
           std::cout << "\n\n========================================\n"
-          << "Preprocessed merge Tree size: " <<tree->getNumberOfNodes() <<"\n"
+          << "Preprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n"
           << "========================================\n";
         }
         if (cbdDebug) {
@@ -1268,8 +1269,15 @@ namespace ttk {
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
         if (shortTreeStats) {
+          std::vector<ftm::idNode> subtrees;
+          for (unsigned int i = 0; i < tree->getNumberOfNodes(); ++i) {
+            if (tree->getNode(i)->getIsSubtree()) {
+              subtrees.push_back(i);
+            } 
+          }
           std::cout << "\n\n========================================\n"
           << "CBD size: " <<tree->getNumberOfNodes() <<"\n"
+          << "CBD number of subtree nodes: " <<subtrees.size() <<"\n"
           << "========================================\n";
         }
 
@@ -1297,7 +1305,7 @@ namespace ttk {
         
         if (shortTreeStats) {
           std::cout << "\n\n========================================\n"
-          << "BDT number of nodes:  "<< tree->getNumberOfNodes() <<"     \n"
+          << "BDT number of nodes:  "<< tree->getRealNumberOfNodes() <<", "<< tree->getNumberOfNodes()<< "     \n"
           << "========================================\n";
         }
         if (cbdDebug) {

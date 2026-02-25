@@ -220,7 +220,7 @@ default_values="0">
       <PropertyWidgetDecorator type="GenericDecorator"
                               mode="visibility"
                               property="Backend"
-                              value="6" />
+                              value="5" />
     </Expression>
   </PropertyWidgetDecorator>
   </Hints>
