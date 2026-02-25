@@ -123,6 +123,7 @@ int ttkMergeTreeDistanceMatrix::run(
   executeAndPrint(intermediateTrees[1]);
   */
 
+  std::cout << "[Stats] Members: " << inputTrees.size() << "\n";
 
   MA_mditz = false;
   parallelize_ = true;

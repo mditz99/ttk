@@ -1299,6 +1299,7 @@ namespace ttk {
       }
       
       size_t preprocTreeSize = tree->getRealNumberOfNodes();
+      size_t preprocTreeLeaves = tree->getNumberOfLeavesFromTree();
 
       if (statsTest){
         std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
@@ -1338,7 +1339,7 @@ namespace ttk {
             } 
           }
           */
-          ss << "[" <<treeIdx <<"]:|MTinput|:" << inputTreeSize << ";|MTprocessed|:" << preprocTreeSize<< ";|CBD|:" << tree->getNumberOfNodes()<<";|R(CBD)|:"<<tree->getNumberOfSuperArcs(); 
+          ss << "[" <<treeIdx <<"]:|MTinput|:" << inputTreeSize << ";|MTprocessed|:" << preprocTreeSize<<";|Leaves|:"<< preprocTreeLeaves<<";|CBD|:" << tree->getNumberOfNodes()<<";|R(CBD)|:"<<tree->getNumberOfSuperArcs(); 
           std::cout << ss.str() << std::endl;
           ss.str("");
           ss.clear();

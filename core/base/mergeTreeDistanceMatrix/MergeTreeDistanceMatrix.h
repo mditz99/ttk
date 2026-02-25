@@ -206,7 +206,7 @@ namespace ttk {
               std::vector<std::tuple<ftm::idNode, ftm::idNode>> outputMatching;
               Timer timer;
               distanceMatrix[i][j] = mergeTreeDistance.execute<dataType>(
-                trees[i], trees[j], outputMatching);
+                trees[i], trees[j], outputMatching, i , j);
               std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";
             } else if(baseModule_ == 1) {
               BranchMappingDistance branchDist;
