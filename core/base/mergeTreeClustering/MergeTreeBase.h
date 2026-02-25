@@ -34,8 +34,8 @@ namespace ttk {
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
-    bool cbdDebug = false;
-    bool shortTreeStats = true;
+    bool cbdDebug = true;
+    bool shortTreeStats = false;
     bool postprocess_ = true;
 
     int assignmentSolverID_ = 0;
@@ -1170,19 +1170,28 @@ namespace ttk {
     template <class dataType>
     void MA_mditz_print(ftm::MergeTree<dataType>& exp){
       for (unsigned int i = 0; i < exp.tree.getNumberOfNodes(); ++i){
+        std::vector<ftm::idNode> cs;
+        std::vector<ftm::idNode> ps;
+        exp.tree.getChildren(i, cs);
+        exp.tree.getParents_DAG(i, ps);
+
+        if(cs.empty() && ps.empty())
+          continue;
+
         std::cout << "Node " << i ; 
-        std::cout << "\n    Scalar: "  << exp.tree.template getValue<dataType>(i);
-        std::cout << "\n    Origin: " << exp.tree.getNode(i)->getOrigin();
-        std::cout << "\n    Is subtree: " << exp.tree.getNode(i)->getIsSubtree() ;
-        std::cout << "\n    Children: ";
-        std::vector<ftm::idNode> ccs2;
-        exp.tree.getChildren(i,ccs2);
-        for (ftm::idNode c: ccs2){
+        std::cout << "\n---Scalar: "  << exp.tree.template getValue<dataType>(i);
+        std::cout << "\n---Is subtree: " << exp.tree.getNode(i)->getIsSubtree() ;
+        if(!exp.tree.getNode(i)->getIsSubtree()){
+          std::cout << "\n---Origin: " << exp.tree.getNode(i)->getOrigin();
+          std::cout << "\n---Origin Scalar: " << exp.tree.template getValue<dataType>(exp.tree.getNode(i)->getOrigin());
+        }
+        std::cout << "\n---Children: ";
+        for (ftm::idNode c: cs){
           std::cout << c << ", ";
         }
         std::cout << "\n    Parents: ";
-        exp.tree.getParents_DAG(i,ccs2);
-        for (ftm::idNode c: ccs2){
+        
+        for (ftm::idNode c: ps){
           std::cout << c << ", ";
         }
         std::cout << "\n";
