@@ -94,16 +94,23 @@ namespace ttk {
                  std::vector<std::vector<double>> &distanceMatrix) {
       treesNodeCorr_.resize(trees.size());
       Timer timer;
+      #ifdef TTK_ENABLE_OPENMP
+      #pragma omp parallel for num_threads(this->threadNumber_) schedule(dynamic) \
+          shared(trees, treesNodeCorr_)
+      #endif
       for(unsigned int i = 0; i < trees.size(); ++i) {
         preprocessingPipeline<dataType>(
           trees[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
           baseModule_ == 0 ? branchDecomposition_ : false, useMinMaxPair_, true,
-          treesNodeCorr_[i], true, baseModule_ == 2);
+          treesNodeCorr_[i], true, baseModule_ == 2, i);
       }
-      std::cout << "[Time] TotalPreproc: " << timer.getElapsedTime() << "\n";
+      std::cout << "[Time] TotalPreproc: " << timer.getElapsedTime() << std::endl;
+      Timer timer2;
       executePara<dataType>(trees, distanceMatrix);
+      std::cout << "[Time] TotalDTime: " << timer2.getElapsedTime() << std::endl;
       if(trees2.size() != 0) {
         std::vector<std::vector<int>> trees2NodeCorr(trees2.size());
+        //mditz: not trees2.size, and tree2NodeCorr?
         for(unsigned int i = 0; i < trees.size(); ++i) {
           preprocessingPipeline<dataType>(
             trees2[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
@@ -196,8 +203,8 @@ namespace ttk {
               std::vector<std::tuple<ftm::idNode, ftm::idNode>> outputMatching;
               Timer timer;
               distanceMatrix[i][j] = mergeTreeDistance.execute<dataType>(
-                trees[i], trees[j], outputMatching);
-              std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";
+                trees[i], trees[j], outputMatching,i,j);
+              std::cout << "[Time] DTime: " << timer.getElapsedTime() << std::endl;
             } else if(baseModule_ == 1) {
               BranchMappingDistance branchDist;
               branchDist.setBaseMetric(branchMetric_);
@@ -215,7 +222,7 @@ namespace ttk {
               branchDist.setSaveTree(false);
               Timer timer;
               dataType dist = branchDist.execute<dataType>(trees[i], trees[j]);
-              std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";
+              std::cout << "[Time] DTime: " << timer.getElapsedTime() << std::endl;
               distanceMatrix[i][j] = static_cast<double>(dist);
             } else if(baseModule_ == 2) {
               PathMappingDistance pathDist;

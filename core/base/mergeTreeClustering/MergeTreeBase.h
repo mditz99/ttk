@@ -29,13 +29,13 @@ namespace ttk {
     //MA_mditz
     bool MA_mditz = false;
     bool acceleration_ = false;
-    bool parallelFor = true;
+    bool parallelFor = false;
     bool statsTest = false;
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
     bool cbdDebug = false;
-    bool shortTreeStats = false;
+    bool shortTreeStats = true;
     bool postprocess_ = true;
 
     int assignmentSolverID_ = 0;
@@ -425,7 +425,6 @@ namespace ttk {
       ftm::idNode const treeRoot = tree->getRoot();
       dataType maxPers = tree->getMaximumPersistence<dataType>();
       dataType threshold = persistenceThresholdT / 100 * maxPers;
-      std::cout <<"[PersistenceThreshold] float: " << threshold << "\n";
 
       dataType secondMax = tree->getSecondMaximumPersistence<dataType>();
       bool keepOneZeroPersistencePair = (secondMax == 0 or maxPers == 0);
@@ -1212,18 +1211,19 @@ namespace ttk {
                                std::vector<ftm::idNode> &dataMap, //mditz
                                ftm::MergeTree<dataType> &preprocessed_MT,
                                bool deleteInconsistentNodes = true,
-                               bool removeMergedSaddles = false
+                               bool removeMergedSaddles = false,
+                               int treeIdx = -1
                               ) {
       
       Timer t_proc;
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
+      size_t inputTreeSize = tree->getRealNumberOfNodes();
       
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
       
       // - Delete null persistence pairs and persistence thresholding
       persistenceThresholding<dataType>(tree, persistenceThreshold);
-      std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
       
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
@@ -1242,18 +1242,13 @@ namespace ttk {
           }
         }
       }
-
+      size_t preprocTreeSize = tree->getRealNumberOfNodes();
 
       if (statsTest){
         std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
         std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
       }
 
-      if (shortTreeStats) {
-          std::cout << "\n\n========================================\n"
-          << "Preprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n"
-          << "========================================\n";
-        }
         if (cbdDebug) {
            std::cout << "\n\n========================================\n"
           << "     Preprocessed Merge Tree     \n"
@@ -1280,16 +1275,16 @@ namespace ttk {
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
         if (shortTreeStats) {
+          /*
           std::vector<ftm::idNode> subtrees;
           for (unsigned int i = 0; i < tree->getNumberOfNodes(); ++i) {
             if (tree->getNode(i)->getIsSubtree()) {
               subtrees.push_back(i);
             } 
           }
-          std::cout << "\n\n========================================\n"
-          << "CBD size: " <<tree->getNumberOfNodes() <<"\n"
-          << "CBD number of subtree nodes: " <<subtrees.size() <<"\n"
-          << "========================================\n";
+          */
+          std::cout << "[" <<treeIdx <<"]:|MTinput|:" << inputTreeSize << ";|MTprocessed|:" << preprocTreeSize<< ";|CBD|:" << tree->getNumberOfNodes()<<";|R(CBD)|:"<<tree->getNumberOfSuperArcs()<<std::endl; 
+          
         }
 
         if (cbdDebug) {
@@ -1315,9 +1310,7 @@ namespace ttk {
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
         
         if (shortTreeStats) {
-          std::cout << "\n\n========================================\n"
-          << "BDT number of nodes:  "<< tree->getRealNumberOfNodes() <<", "<< tree->getNumberOfNodes()<< "     \n"
-          << "========================================\n";
+          std::cout << "[" <<treeIdx <<"]:|MT|:" << preprocTreeSize << ";|BDT|:" << tree->getRealNumberOfNodes()<<std::endl;
         }
         if (cbdDebug) {
           std::cout << "BDT:\n";
@@ -1360,7 +1353,7 @@ namespace ttk {
       // - Time printing
       // verifyPairsTree(tree);
       auto t_preproc_time = t_proc.getElapsedTime();
-      std::cout << "[Time] PreProcTimePF"<<parallelFor<<": " << t_preproc_time << "\n";
+      std::cout << "[Time] PreProcTime"<<parallelFor<<": " << t_preproc_time << "\n";
       std::stringstream ss;
       ss << "TIME PREPROC.   = " << t_preproc_time;
 
@@ -1380,13 +1373,15 @@ namespace ttk {
                                bool cleanTreeT,
                                std::vector<int> &nodeCorr,
                                bool deleteInconsistentNodes = true,
-                               bool removeMergedSaddles = false) {
+                               bool removeMergedSaddles = false,
+                               int treeIdx = -1
+                                ) {
       ftm::MergeTree<dataType> dummyTree;
       std::vector<ftm::idNode> localDataMap;                        
       preprocessingPipeline<dataType>(
         mTree, epsilonTree, epsilon2Tree, epsilon3Tree, branchDecompositionT,
         useMinMaxPairT, cleanTreeT, persistenceThreshold_, nodeCorr,localDataMap, dummyTree,
-        deleteInconsistentNodes, removeMergedSaddles);
+        deleteInconsistentNodes, removeMergedSaddles, treeIdx);
     }
 
     //No persistenceThreshold
