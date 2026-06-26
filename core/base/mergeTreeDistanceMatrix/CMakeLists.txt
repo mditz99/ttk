@@ -7,3 +7,6 @@ ttk_add_base_library(mergeTreeDistanceMatrix
     mergeTreeClustering
     ftmTree
     )
+
+#target_compile_options(mergeTreeDistanceMatrix PUBLIC -fsanitize=address)
+#target_link_options(mergeTreeDistanceMatrix PUBLIC -fsanitize=address)

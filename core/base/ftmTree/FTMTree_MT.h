@@ -15,10 +15,6 @@
 #pragma once
 
 #include <functional>
-#include <map>
-#include <numeric>
-#include <queue>
-#include <set>
 #include <vector>
 
 #include <Geometry.h>

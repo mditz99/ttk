@@ -231,6 +231,36 @@ public:
     return parallelFor;
   }
 
+  //MA_mditz
+  void SetUseThresholdCBD(bool b) {
+    useThresholdCBD_ = b;
+    Modified();
+  }
+  
+  bool GetUseThresholdCBD() {
+    return useThresholdCBD_;
+  }
+
+  //MA_mditz
+  void SetGlobalThreshold(bool b) {
+    globalThreshold_ = b;
+    Modified();
+  }
+  
+  bool GetGlobalThreshold() {
+    return globalThreshold_;
+  }
+
+  //MA_mditz
+  void SetThresholdOfCBD(double d) {
+    thresholdOfCBD_ = d;
+    Modified();
+  }
+  
+  bool GetThresholdOfCBD() {
+    return thresholdOfCBD_;
+  }
+
   void SetDistanceSquaredRoot(bool distanceSquaredRoot) {
     distanceSquaredRoot_ = distanceSquaredRoot;
     Modified();

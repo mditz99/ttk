@@ -157,6 +157,9 @@ namespace ttk {
               mergeTreeDistance.setAcceleration(acceleration_);
               mergeTreeDistance.setStatsTest(statsTest);
               mergeTreeDistance.setParallelFor(parallelFor);
+              mergeTreeDistance.setUseThresholdCBD(useThresholdCBD_);
+              mergeTreeDistance.setGlobalThreshold(globalThreshold_);
+              mergeTreeDistance.setThresholdOfCBD(thresholdOfCBD_);
 
               mergeTreeDistance.setAssignmentSolver(assignmentSolverID_);
               mergeTreeDistance.setEpsilonTree1(epsilonTree1_);

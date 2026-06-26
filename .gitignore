@@ -24,3 +24,7 @@ CMakeLists.txt.user
 
 # C++ Lang Server folder
 /.ccls-cache*/
+compile_commands.json
+.gitignore
+core/base/mergeTreeClustering/CMakeLists.txt
+core/base/mergeTreeDistanceMatrix/CMakeLists.txt

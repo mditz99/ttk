@@ -124,6 +124,54 @@ default_values="0">
 </IntVectorProperty> 
 
 <IntVectorProperty
+name="UseThresholdCBD"
+command="SetUseThresholdCBD"
+label="Use Threshold CBD"
+number_of_elements="1"
+default_values="1">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="Backend"
+                           value="6" />
+  </Hints>
+  <BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
+<IntVectorProperty
+name="GlobalThreshold"
+command="SetGlobalThreshold"
+label="Global Threshold"
+number_of_elements="1"
+default_values="1">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="UseThresholdCBD"
+                           value="1" />
+  </Hints>
+  <BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
+<DoubleVectorProperty
+name="ThresholdOfCBD"
+command="SetThresholdOfCBD"
+label="Threshold of CBD (%)"
+number_of_elements="1"
+default_values="5">
+  <Hints>
+  <PropertyWidgetDecorator type="GenericDecorator"
+                           mode="visibility"
+                           property="UseThresholdCBD"
+                           value="1" />
+  </Hints>
+  <Documentation>
+    Threshold to consider to prune branch choices of CBD in percentage. 100 % would correspond to the full CBD, meanwhile 0% to Elder-Rule BDT (Wasserstein Distance). 
+  </Documentation>
+  <DoubleRangeDomain name="range" min="0" max="100" />
+</DoubleVectorProperty>
+
+<IntVectorProperty
 name="Acceleration"
 command="SetAcceleration"
 label="Enable Acceleration (MA mditz)"
@@ -132,8 +180,8 @@ default_values="0">
   <Hints>
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
-                           property="KeepSubtree"
-                           value="0" />
+                           property="Backend"
+                           value="6" />
   </Hints>
   <Documentation>
     Compute Dynamic Table Entry only if the ranges of the corresponding nodes intersect.
@@ -150,8 +198,8 @@ default_values="0">
   <Hints>
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
-                           property="KeepSubtree"
-                           value="0" />
+                           property="Backend"
+                           value="6" />
   </Hints>
   <BooleanDomain name="bool"/>
 </IntVectorProperty> 

@@ -118,6 +118,9 @@ private:
   bool MA_mditz = false;
   bool statsTest = false;
   bool parallelFor = false;
+  bool useThresholdCBD = true;
+  bool globalThreshold = true;
+  double thresholdOfCBD = 5.;
 
   // Output Options
   bool OutputTrees = true;
@@ -359,6 +362,27 @@ public:
     Modified();
   }
   vtkGetMacro(parallelFor, bool);
+
+  //MA_mditz
+  void SetUseThresholdCBD(bool b) {
+    useThresholdCBD = b;
+    Modified();
+  }
+  vtkGetMacro(useThresholdCBD, bool);
+
+  //MA_mditz
+  void SetGlobalThreshold(bool b) {
+    globalThreshold = b;
+    Modified();
+  }
+  vtkGetMacro(globalThreshold, bool);
+
+  //MA_mditz
+  void SetThresholdOfCBD(bool b) {
+    thresholdOfCBD = b;
+    Modified();
+  }
+  vtkGetMacro(thresholdOfCBD, bool);
 
 
   void SetKeepSubtree(bool keepSubtree) {
