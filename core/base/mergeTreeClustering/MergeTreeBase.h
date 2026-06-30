@@ -24,7 +24,7 @@ namespace ttk {
   class MergeTreeBase : virtual public Debug {
   protected:
     //MA_mditz
-    bool  MA_mditz = false;
+    bool MA_mditz = false;
     bool acceleration_ = false;
     bool parallelFor = true;
     bool statsTest = false;

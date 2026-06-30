@@ -274,9 +274,10 @@ namespace ttk {
         &forestBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
-      
-      if(children1.size() != 0 && children2.size() != 0) {
+      if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())) 
+        return;
         
+      if(children1.size() != 0 && children2.size() != 0) {
         dataType forestTerm3;
 
         // Term 3
@@ -477,37 +478,36 @@ namespace ttk {
       std::vector<std::vector<std::tuple<int, int>>> &treeBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
+
+      //Checking both for subtree property is irrelevant by checkEntry, but for completeness for now
+      if (MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree())) {
+        //Timer timer;
+        std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
+        /*
+        if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
+          timeSinglePairing += timer.getElapsedTime();
+          sizeSinglePairing += children1.size()*children2.size();
+          numSinglePairing += 1;
+          maxdegree1SinglePairing = std::max<int>(maxdegree1SinglePairing,children1.size());
+          maxdegree2SinglePairing = std::max<int>(maxdegree2SinglePairing,children2.size());
+
+        }
+        */
+        treeTable[i][j] = std::get<0>(singlePairing_mditzTerm);
+
+        //treeBackTable[i][j] = std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm));
+        return;
+      }
       dataType treeTerm3;
-      
-      std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm;
       // Term 3
-      treeTerm3
-        = forestTable[i][j] + relabelCost<dataType>(tree1, nodeI, tree2, nodeJ);
+      treeTerm3  = forestTable[i][j] + relabelCost<dataType>(tree1, nodeI, tree2, nodeJ);
 
       if(not keepSubtree_) {
         // Compute table value
-        if(not MA_mditz or (not tree1->getNode(nodeI)->getIsSubtree() and not tree2->getNode(nodeJ)->getIsSubtree())){
-          treeTable[i][j] = treeTerm3;
-          // Add backtracking information
-          treeBackTable[i][j] = std::make_tuple(i, j);
-        } else if (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree()){
-          Timer timer;
-          singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
-          if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
-            timeSinglePairing += timer.getElapsedTime();
-            sizeSinglePairing += children1.size()*children2.size();
-            numSinglePairing += 1;
-            maxdegree1SinglePairing = std::max<int>(maxdegree1SinglePairing,children1.size());
-            maxdegree2SinglePairing = std::max<int>(maxdegree2SinglePairing,children2.size());
-
-          }
-          treeTable[i][j] = std::get<0>(singlePairing_mditzTerm);
-
-          //treeBackTable[i][j] = std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm));
-        }
-        else {
-          treeTable[i][j] = std::numeric_limits<dataType>::max();
-        }
+        treeTable[i][j] = treeTerm3;
+        // Add backtracking information
+        treeBackTable[i][j] = std::make_tuple(i, j);
+        
       } else {
         dataType treeTerm1, treeTerm2;
         std::tuple<dataType, ftm::idNode> treeCoTerm1, treeCoTerm2;

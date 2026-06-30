@@ -238,10 +238,13 @@ int ttkMergeTreeClustering::runCompute(
   // Classical distance
   double distance = 0;
 
+  MA_mditz = false;
+
   // Verify parameters
   if(Backend == 0) {
     BranchDecomposition = true;
-    NormalizedWasserstein = true;
+    //MA_mditz
+    NormalizedWasserstein = false;
     KeepSubtree = false;
   } else if(Backend == 1) {
     BranchDecomposition = false;
@@ -255,7 +258,11 @@ int ttkMergeTreeClustering::runCompute(
     BranchDecomposition = false;
     NormalizedWasserstein = false;
     KeepSubtree = false;
-  }
+  } else if(Backend == 5){
+      MA_mditz = true;
+      KeepSubtree = false;
+      NormalizedWasserstein = false;
+  } 
   if(IsPersistenceDiagram) {
     BranchDecomposition = true;
   }
@@ -290,6 +297,15 @@ int ttkMergeTreeClustering::runCompute(
       mergeTreeDistance.setNonMatchingWeight(NonMatchingWeight);
       mergeTreeDistance.setThreadNumber(this->threadNumber_);
       mergeTreeDistance.setDebugLevel(this->debugLevel_);
+
+      //mditz
+      mergeTreeDistance.setMA_mditz(MA_mditz);
+      mergeTreeDistance.setAcceleration(Acceleration);
+      mergeTreeDistance.setStatsTest(statsTest);
+      mergeTreeDistance.setParallelFor(parallelFor);
+      mergeTreeDistance.setUseThresholdCBD(useThresholdCBD);
+      mergeTreeDistance.setGlobalThreshold(globalThreshold);
+      mergeTreeDistance.setThresholdOfCBD(thresholdOfCBD);
 
       distance = mergeTreeDistance.execute<dataType>(
         intermediateMTrees[0], intermediateMTrees[1], outputMatching);

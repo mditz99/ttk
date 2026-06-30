@@ -153,13 +153,6 @@ int ttkMergeTreeDistanceMatrix::run(
     } else if(Backend == 5){
       MA_mditz = true;
       keepSubtree_ = false;
-      normalizedWasserstein_ = false;
-      parallelize_ = false;
-      baseModule_ = 0;
-    } 
-    else if(Backend == 6){
-      MA_mditz = true;
-      keepSubtree_ = false;
       parallelize_ = true;
       normalizedWasserstein_ = false;
       baseModule_ = 0;
