@@ -713,7 +713,7 @@ namespace ttk {
     }
 
     template <class dataType> 
-    std::vector<char> globalThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> leafDataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
+    std::vector<char> globalThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
       unsigned int numNodes = CBD->tree.getNumberOfNodes();
       std::vector<ftm::idNode> leaves;
       inputMTptr->tree.getLeavesFromTree(leaves);
@@ -770,8 +770,8 @@ namespace ttk {
           iChildren.begin(), 
           iChildren.end(),
           iValues.begin(),
-          [&leafDataMap,&inputMTptr](int id) {
-            return std::make_pair(id, inputMTptr->tree.template getNodePersistence<dataType>(leafDataMap[id]));
+          [&dataMap,&inputMTptr](int id) {
+            return std::make_pair(id, inputMTptr->tree.template getNodePersistence<dataType>(dataMap[id]));
           }
         );
 
@@ -805,7 +805,7 @@ namespace ttk {
     }
     
     template <class dataType> 
-    std::vector<char> localThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> leafDataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
+    std::vector<char> localThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
     unsigned int numNodes = CBD->tree.getNumberOfNodes();
     std::vector<ftm::idNode> subtrees;
     for (unsigned int i = 0; i < numNodes; ++i) {
@@ -826,8 +826,8 @@ namespace ttk {
         iChildren.begin(), 
         iChildren.end(),
         iValues.begin(),
-        [&leafDataMap,&inputMTptr](int id) {
-          return std::make_pair(id, inputMTptr->tree.template getNodePersistence<dataType>(leafDataMap[id]));
+        [&dataMap,&inputMTptr](int id) {
+          return std::make_pair(id, inputMTptr->tree.template getNodePersistence<dataType>(dataMap[id]));
         }
       );
 
@@ -845,10 +845,10 @@ namespace ttk {
     }
 
     template <class dataType> 
-    std::shared_ptr<ftm::MergeTree<dataType>> transformToThresholdCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> leafDataMap, int additionalChoices,ftm::MergeTree<dataType>* inputMTptr){
+    std::shared_ptr<ftm::MergeTree<dataType>> transformToThresholdCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> dataMap, int additionalChoices,ftm::MergeTree<dataType>* inputMTptr){
       unsigned int numNodes = CBD->tree.getNumberOfNodes();   
       
-      std::vector<char> stay = globalThreshold_ ? globalThresholdingCBD(CBD,leafDataMap, additionalChoices,inputMTptr) : localThresholdingCBD(CBD, leafDataMap, additionalChoices, inputMTptr);
+      std::vector<char> stay = globalThreshold_ ? globalThresholdingCBD(CBD,dataMap, additionalChoices,inputMTptr) : localThresholdingCBD(CBD, dataMap, additionalChoices, inputMTptr);
       //Consequence deletes
       std::vector<char> reachable(numNodes, 0);
       reachable[0] = 1;                              // root
@@ -976,7 +976,7 @@ namespace ttk {
 
       auto result = computeThresholdCompleteBranchDecomposition<dataType>(inputMTptr, inputMTptr->tree.getRoot(), children[0]);
       auto resultCBD = result.first;
-      auto resultLDM = result.second;
+      auto resultDM = result.second;
       std::cout << "CBD" <<std::endl;
       MA_mditz_print(*resultCBD);
       std::vector<ftm::idNode> leaves;
@@ -987,7 +987,7 @@ namespace ttk {
 
       std::cout << "additionalChoices:" << additionalChoices << "; number of Leaves: "<< inputMTptr->tree.getNumberOfLeaves() << ": threshold CBD: "<<thresholdOfCBD_<< std::endl;
 
-      auto TCBD = transformToThresholdCBD<dataType>(resultCBD, resultLDM, additionalChoices, inputMTptr);
+      auto TCBD = transformToThresholdCBD<dataType>(resultCBD, resultDM, additionalChoices, inputMTptr);
       std::cout << "TCBD" <<std::endl;
       MA_mditz_print(*TCBD);
       return TCBD;
@@ -998,7 +998,7 @@ namespace ttk {
     std::pair<std::shared_ptr<ftm::MergeTree<dataType>>,std::vector<ftm::idNode>> computeThresholdCompleteBranchDecomposition(
       ftm::MergeTree<dataType>* inputMTptr, ftm::idNode pId, ftm::idNode cId ) {
       
-      using LeafDataMap = std::vector<ftm::idNode>;
+      using DataMap = std::vector<ftm::idNode>;
       //=====================================================
       //Bottom up  through Edge Recursion of Input MergeTree
       //=====================================================
@@ -1046,10 +1046,11 @@ namespace ttk {
         completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
         completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
 
-        LeafDataMap leafDataMap(2);
-        leafDataMap[1] = cId;
+        DataMap dataMap(2);
+        dataMap[0] = pId;
+        dataMap[1] = cId;
 
-        return {completeBDptr, leafDataMap};
+        return {completeBDptr, dataMap};
       }
       else{ 
         
@@ -1063,7 +1064,7 @@ namespace ttk {
         //---------------------------------------------------------
         //Recurse
         std::vector<std::shared_ptr<ftm::MergeTree<dataType>>> recursion_results(numCcs);
-        std::vector<LeafDataMap> recursion_leafDataMaps(numCcs);
+        std::vector<DataMap> recursion_DataMaps(numCcs);
         
         #ifdef TTK_ENABLE_OPENMP4
         #pragma omp parallel for if(parallelFor)
@@ -1071,7 +1072,7 @@ namespace ttk {
         for(unsigned int i = 0; i < numCcs; ++i){
           auto result = computeThresholdCompleteBranchDecomposition<dataType>(inputMTptr, cId, ccs[i]);
           recursion_results[i] = result.first;
-          recursion_leafDataMaps[i] = result.second;          
+          recursion_DataMaps[i] = result.second;          
         }    
         
         //---------------------------------------------------------
@@ -1096,12 +1097,13 @@ namespace ttk {
 
         //Remember scalars throughout merging and later steps to set at the end.
         std::vector<dataType>scalarsCBD = std::vector<dataType>(numNodesResult);
-        LeafDataMap leafDataMap(numNodesResult);
+        DataMap dataMap(numNodesResult);
 
         //Make main subtree node
         completeBDptr->tree.makeNode(0); 
         scalarsCBD[0] = inputMTptr->tree.template getValue<dataType>(pId);
         completeBDptr->tree.getNode(0)->setIsSubtree(true);
+        dataMap[0] = pId;
 
         //---------------------------------------------------------
         //Merge recursion results
@@ -1114,7 +1116,7 @@ namespace ttk {
         for(unsigned int i = 0; i < numCcs; ++i){
           //cciIH := CBD of Merge Tree rooted at [c,cc_i] through induction hypothesis 
           std::shared_ptr<ftm::MergeTree<dataType>> cciIH = recursion_results[i];
-          LeafDataMap ldmIH = recursion_leafDataMaps[i];
+          DataMap ldmIH = recursion_DataMaps[i];
 
           unsigned int currOffset = numAddedNodes;
           mainSTNodes[i] = currOffset;
@@ -1134,7 +1136,7 @@ namespace ttk {
 
             scalarsCBD[newId] = val;
             if (!oldNode->getIsSubtree()) {
-              leafDataMap[newId] = ldmIH[nId];
+              dataMap[newId] = ldmIH[nId];
             }
           }
 
@@ -1164,7 +1166,7 @@ namespace ttk {
             completeBDptr->tree.getNode(currExtendedMainBranch)->setOrigin(0); 
             numAddedNodes += 1;
 
-            leafDataMap[currExtendedMainBranch] = leafDataMap[currMainBranch];
+            dataMap[currExtendedMainBranch] = dataMap[currMainBranch];
 
             //Add arc [Main subtree node, p-l]
             completeBDptr->tree.makeSuperArc(currExtendedMainBranch, 0);
@@ -1188,7 +1190,7 @@ namespace ttk {
         completeBDptr->scalarsValues = std::make_shared<std::vector<dataType>>(scalarsCBD);
         completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
         completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
-        return {completeBDptr, leafDataMap};
+        return {completeBDptr, dataMap};
       }
     }
 

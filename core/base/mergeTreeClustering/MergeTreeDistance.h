@@ -274,8 +274,13 @@ namespace ttk {
         &forestBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
-      if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())) 
+      if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())){
+        std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
+        forestTable[i][j] = std::get<0>(singlePairing_mditzTerm);
+        forestBackTable[i][j] = {std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm))};
         return;
+      } 
+        
         
       if(children1.size() != 0 && children2.size() != 0) {
         dataType forestTerm3;
@@ -300,6 +305,11 @@ namespace ttk {
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
           forestBackTable[i][j] = forestAssignment;
+
+          std::cout << "\nIn computeForest with " << i << ", "<< j << ". forestAssignment: ";
+          for (auto a : forestAssignment) {
+            std::cout <<"(" <<std::get<0>(a) <<"; " <<std::get<1>(a) << "), ";
+          }
           
         } else {
           dataType forestTerm1, forestTerm2;
@@ -462,7 +472,7 @@ namespace ttk {
           }
         }
       }
-      return std::make_tuple(tempMin, bestIdNode1, bestIdNode2);
+      return std::make_tuple(tempMin, bestIdNode1 +1, bestIdNode2 +1);
     }
 
     template <class dataType>
@@ -480,10 +490,11 @@ namespace ttk {
       std::vector<ftm::idNode> &children2) {
 
       //Checking both for subtree property is irrelevant by checkEntry, but for completeness for now
+      /*
       if (MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree())) {
         //Timer timer;
-        std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
-        /*
+        //std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
+        
         if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
           timeSinglePairing += timer.getElapsedTime();
           sizeSinglePairing += children1.size()*children2.size();
@@ -492,15 +503,19 @@ namespace ttk {
           maxdegree2SinglePairing = std::max<int>(maxdegree2SinglePairing,children2.size());
 
         }
-        */
-        treeTable[i][j] = std::get<0>(singlePairing_mditzTerm);
+        
+        treeTable[i][j] = forestTable[i][j];//std::get<0>(singlePairing_mditzTerm);
 
-        //treeBackTable[i][j] = std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm));
+        treeBackTable[i][j] = std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm));
         return;
       }
+      */
+      bool subtreesCBD = MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree());
+
       dataType treeTerm3;
       // Term 3
-      treeTerm3  = forestTable[i][j] + relabelCost<dataType>(tree1, nodeI, tree2, nodeJ);
+      treeTerm3  = forestTable[i][j] + (subtreesCBD ? 0 : relabelCost<dataType>(tree1, nodeI, tree2, nodeJ));
+      
 
       if(not keepSubtree_) {
         // Compute table value
@@ -556,6 +571,7 @@ namespace ttk {
         bool useTreeTable = std::get<2>(elem);
         int const i = std::get<0>(elem);
         int const j = std::get<1>(elem);
+        std::cout << "Looking at " << i << ", " << j <<"\n"; 
 
         if(useTreeTable) {
           int const tupleI = std::get<0>(treeBackTable[i][j]);
@@ -563,6 +579,7 @@ namespace ttk {
           if(tupleI != 0 && tupleJ != 0) {
             useTreeTable = (tupleI != i || tupleJ != j);
             backQueue.emplace(tupleI, tupleJ, useTreeTable);
+            std::cout << "---- in useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
             if(not useTreeTable) { // We have matched i and j
               ftm::idNode const tree1Node = tupleI - 1;
               ftm::idNode const tree2Node = tupleJ - 1;
@@ -580,6 +597,7 @@ namespace ttk {
             if(tupleI != 0 && tupleJ != 0) {
               useTreeTable = (tupleI != i && tupleJ != j);
               backQueue.emplace(tupleI, tupleJ, useTreeTable);
+              std::cout << "---- in not useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
             }
           }
         }
@@ -666,9 +684,14 @@ namespace ttk {
       // ---------------------
       // ----- Compute matching
       // --------------------
-      if(not MA_mditz)
-        computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
-                                outputMatching, indR, indC);
+      
+      computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
+                              outputMatching, indR, indC);
+
+      std::cout << "\nMatching with size "<< outputMatching.size()<< " : ";
+      for (auto t : outputMatching) {
+        std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
+      }
       return distance;
     }
 
