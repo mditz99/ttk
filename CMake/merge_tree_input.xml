@@ -132,7 +132,7 @@ default_values="1">
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
                            property="Backend"
-                           value="6" />
+                           value="5" />
   </Hints>
   <BooleanDomain name="bool"/>
 </IntVectorProperty> 
@@ -146,8 +146,8 @@ default_values="1">
   <Hints>
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
-                           property="UseThresholdCBD"
-                           value="1" />
+                           property="Backend"
+                           value="5" />
   </Hints>
   <BooleanDomain name="bool"/>
 </IntVectorProperty> 
@@ -161,8 +161,8 @@ default_values="5">
   <Hints>
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
-                           property="UseThresholdCBD"
-                           value="1" />
+                           property="Backend"
+                           value="5" />
   </Hints>
   <Documentation>
     Threshold to consider to prune branch choices of CBD in percentage. 100 % would correspond to the full CBD, meanwhile 0% to Elder-Rule BDT (Wasserstein Distance). 
@@ -180,7 +180,7 @@ default_values="0">
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
                            property="Backend"
-                           value="6" />
+                           value="5" />
   </Hints>
   <Documentation>
     Compute Dynamic Table Entry only if the ranges of the corresponding nodes intersect.
@@ -198,7 +198,7 @@ default_values="0">
   <PropertyWidgetDecorator type="GenericDecorator"
                            mode="visibility"
                            property="Backend"
-                           value="6" />
+                           value="5" />
   </Hints>
   <BooleanDomain name="bool"/>
 </IntVectorProperty> 

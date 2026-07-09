@@ -236,6 +236,7 @@ public:
     useThresholdCBD_ = b;
     Modified();
   }
+  vtkGetMacro(useThresholdCBD_, int);
   
   bool GetUseThresholdCBD() {
     return useThresholdCBD_;
@@ -246,6 +247,7 @@ public:
     globalThreshold_ = b;
     Modified();
   }
+  vtkGetMacro(globalThreshold_, int);
   
   bool GetGlobalThreshold() {
     return globalThreshold_;
@@ -256,6 +258,7 @@ public:
     thresholdOfCBD_ = d;
     Modified();
   }
+  vtkGetMacro(thresholdOfCBD_, int);
   
   bool GetThresholdOfCBD() {
     return thresholdOfCBD_;

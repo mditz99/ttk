@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <stack>
-#include <thread>
-
 // ttk common includes
 #include <Debug.h>
 
@@ -225,11 +222,28 @@ namespace ttk {
       dataType cost = 0;
       for(const auto &mTuple : matchings) {
         cost += std::get<2>(mTuple);
+        /* Before mditz
         if(std::get<0>(mTuple) >= (int)children1.size()
-           || std::get<1>(mTuple) >= (int)children2.size())
+           || std::get<1>(mTuple) >= (int)children2.size() )
           continue;
         int const tableId1 = children1[std::get<0>(mTuple)] + 1;
         int const tableId2 = children2[std::get<1>(mTuple)] + 1;
+        */
+
+        bool erased1 = std::get<0>(mTuple) >= (int)children1.size();
+        bool erased2 = std::get<1>(mTuple) >= (int)children2.size();
+        if (erased1 || erased2 ) {
+          if (MA_mditz) {
+            int const tableId1 = erased1? 0 : children1[std::get<0>(mTuple)] + 1;
+            int const tableId2 = erased2? 0 : children2[std::get<1>(mTuple)] + 1;
+
+            forestAssignment.emplace_back(tableId1, tableId2);
+          }
+          continue;
+        }
+        int const tableId1 = children1[std::get<0>(mTuple)] + 1;
+        int const tableId2 = children2[std::get<1>(mTuple)] + 1;
+
         forestAssignment.emplace_back(tableId1, tableId2);
       }
       return cost;
@@ -305,11 +319,6 @@ namespace ttk {
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
           forestBackTable[i][j] = forestAssignment;
-
-          std::cout << "\nIn computeForest with " << i << ", "<< j << ". forestAssignment: ";
-          for (auto a : forestAssignment) {
-            std::cout <<"(" <<std::get<0>(a) <<"; " <<std::get<1>(a) << "), ";
-          }
           
         } else {
           dataType forestTerm1, forestTerm2;
@@ -355,23 +364,40 @@ namespace ttk {
       ftm::idNode nodeI,
       int i,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable) {
+      std::vector<std::vector<dataType>> &forestTable, 
+      std::vector<std::vector<std::vector<std::tuple<int, int>>>> &forestBackTable) {
 
-      bool MA_mditz_AltCase = MA_mditz and tree1->getNode(nodeI)->getIsSubtree();
+      std::vector<std::tuple<int, int>> backTrack; 
+      bool cbdSubtree = MA_mditz and tree1->getNode(nodeI)->getIsSubtree();
       std::vector<ftm::idNode> children;
       tree1->getChildren(nodeI, children);
       
-      if(MA_mditz_AltCase)
-        forestTable[i][0] = treeTable[children[0]+1][0];
+      ftm::idNode cbdSubtreeMin; 
+      if(cbdSubtree){
+        cbdSubtreeMin = children[0]+1;
+        forestTable[i][0] = treeTable[cbdSubtreeMin][0];
+      }
       else
         forestTable[i][0] = 0;
 
+      
       for(ftm::idNode const child : children){
-        if(MA_mditz_AltCase)
-          forestTable[i][0] = std::min(forestTable[i][0], treeTable[child + 1][0]);
-        else
+        if(cbdSubtree){
+          if (forestTable[i][0] > treeTable[child + 1][0]) {
+            forestTable[i][0] =  treeTable[child + 1][0];
+            cbdSubtreeMin = child + 1;
+          }  
+        }
+        else{
           forestTable[i][0] += treeTable[child + 1][0];
+        }
       }
+
+      if (cbdSubtree) {
+        backTrack.emplace_back(cbdSubtreeMin, 0);
+      }
+
+      forestBackTable[i][0] = backTrack;
     }
 
     template <class dataType>
@@ -380,7 +406,8 @@ namespace ttk {
       ftm::idNode nodeI,
       int i,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable) {
+      std::vector<std::vector<dataType>> &forestTable,
+      std::vector<std::vector<std::tuple<int, int>>> &treeBackTable) {
       if(MA_mditz and tree1->getNode(nodeI)->getIsSubtree())
         treeTable[i][0] = forestTable[i][0];
       else
@@ -393,22 +420,36 @@ namespace ttk {
       ftm::idNode nodeJ,
       int j,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable) {
+      std::vector<std::vector<dataType>> &forestTable, 
+      std::vector<std::vector<std::vector<std::tuple<int, int>>>> &forestBackTable) {
 
-      bool MA_mditz_AltCase = MA_mditz and tree2->getNode(nodeJ)->getIsSubtree();
+      std::vector<std::tuple<int, int>> backTrack; 
+      bool cbdSubtree = MA_mditz and tree2->getNode(nodeJ)->getIsSubtree();
       std::vector<ftm::idNode> children;
       tree2->getChildren(nodeJ, children);
-
-      if(MA_mditz_AltCase)
-        forestTable[0][j] = treeTable[0][children[0] +1];
-      else
+      
+      ftm::idNode cbdSubtreeMin;
+      if(cbdSubtree){
+        cbdSubtreeMin = children[0]+1;
+        forestTable[0][j] = treeTable[0][cbdSubtreeMin];
+      }  else
         forestTable[0][j] = 0;
 
       for(ftm::idNode const child : children)
-        if(MA_mditz_AltCase)
-          forestTable[0][j] = std::min(forestTable[0][j], treeTable[0][child + 1]);
-        else
+        if(cbdSubtree){
+          if (forestTable[0][j] > treeTable[0][child + 1]) {
+            forestTable[0][j] =  treeTable[0][child + 1];
+            cbdSubtreeMin = child + 1;
+          }
+        }
+        else{
           forestTable[0][j] += treeTable[0][child + 1];
+        }
+      if (cbdSubtree) {
+        backTrack.emplace_back(0, cbdSubtreeMin);
+      }
+
+      forestBackTable[0][j] = backTrack;
     }
 
     template <class dataType>
@@ -417,7 +458,8 @@ namespace ttk {
       ftm::idNode nodeJ,
       int j,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable) {
+      std::vector<std::vector<dataType>> &forestTable,
+      std::vector<std::vector<std::tuple<int, int>>> &treeBackTable) {
       if(MA_mditz and tree2->getNode(nodeJ)->getIsSubtree())
         treeTable[0][j] = forestTable[0][j];
       else
@@ -562,24 +604,28 @@ namespace ttk {
       std::vector<std::tuple<ftm::idNode, ftm::idNode, double>> &outputMatching,
       int startR,
       int startC) {
+      unsigned int deletionIDTree1 = -1; //2*tree1->getNumberOfNodes();
+      unsigned int deletionIDTree2 = -1; // 2*tree2->getNumberOfNodes();
+
       outputMatching.clear();
-      std::queue<std::tuple<int, int, bool>> backQueue;
-      backQueue.emplace(startR, startC, true);
+      std::queue<std::tuple<int, int, bool, bool>> backQueue;
+      //Additional for deletion, cbd
+      backQueue.emplace(startR, startC, true, false);
       while(!backQueue.empty()) {
-        std::tuple<int, int, bool> elem = backQueue.front();
+        std::tuple<int, int, bool, bool> elem = backQueue.front();
         backQueue.pop();
-        bool useTreeTable = std::get<2>(elem);
         int const i = std::get<0>(elem);
         int const j = std::get<1>(elem);
-        std::cout << "Looking at " << i << ", " << j <<"\n"; 
-
+        bool useTreeTable = std::get<2>(elem);
+        bool deletionSubtree = std::get<3>(elem);
+        //std::cout << "Looking at " << i << ", " << j <<"\n"; 
         if(useTreeTable) {
           int const tupleI = std::get<0>(treeBackTable[i][j]);
           int const tupleJ = std::get<1>(treeBackTable[i][j]);
           if(tupleI != 0 && tupleJ != 0) {
             useTreeTable = (tupleI != i || tupleJ != j);
-            backQueue.emplace(tupleI, tupleJ, useTreeTable);
-            std::cout << "---- in useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
+            backQueue.emplace(tupleI, tupleJ, useTreeTable, false);
+            //std::cout << "---- in useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
             if(not useTreeTable) { // We have matched i and j
               ftm::idNode const tree1Node = tupleI - 1;
               ftm::idNode const tree2Node = tupleJ - 1;
@@ -589,6 +635,31 @@ namespace ttk {
               cost = static_cast<double>(costT);
               outputMatching.emplace_back(tree1Node, tree2Node, cost);
             }
+          } 
+        } else if (deletionSubtree) { //For Wasserstein on CBDs s.t. we can use optimum BDT including deletion cases
+          const bool is_i_zero = (i == 0);
+
+          auto* primaryTree   = is_i_zero ? tree2 : tree1;
+          auto  primaryIdx    = is_i_zero ? j - 1 : i - 1;
+          auto  deleteNumTree = is_i_zero ? deletionIDTree1 : deletionIDTree2;
+          //std::cout << "Tuple: " << i << "; " << j << "; " << useTreeTable << "; " << deletionSubtree <<"\n";
+          //std::cout << "deleteNumTree: "<< deleteNumTree <<"; primaryIdx: " << primaryIdx << "; is_i_zero: " << is_i_zero << "\n";
+          if (is_i_zero) {
+              outputMatching.emplace_back(deleteNumTree, primaryIdx, 0);
+          } else {
+              outputMatching.emplace_back(primaryIdx, deleteNumTree, 0);
+          }
+
+          if (primaryTree->getNode(primaryIdx)->getIsSubtree()) {
+              auto tableVal = is_i_zero ? std::get<1>(forestBackTable[i][j][0]) 
+                                             : std::get<0>(forestBackTable[i][j][0]);
+              backQueue.emplace(is_i_zero ? 0 : tableVal, is_i_zero ? tableVal : 0, false, true);
+          } else {
+              std::vector<ftm::idNode> children;
+              primaryTree->getChildren(primaryIdx, children);
+              for (ftm::idNode c : children) {
+                  backQueue.emplace(is_i_zero ? 0 : c +1, is_i_zero ? c +1 : 0, false, true);
+              }
           }
         } else {
           for(std::tuple<int, int> forestBackElem : forestBackTable[i][j]) {
@@ -596,9 +667,14 @@ namespace ttk {
             int const tupleJ = std::get<1>(forestBackElem);
             if(tupleI != 0 && tupleJ != 0) {
               useTreeTable = (tupleI != i && tupleJ != j);
-              backQueue.emplace(tupleI, tupleJ, useTreeTable);
-              std::cout << "---- in not useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
-            }
+              backQueue.emplace(tupleI, tupleJ, useTreeTable, false);
+              //std::cout << "---- in not useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
+            } else if (MA_mditz) {
+              outputMatching.emplace_back(tupleI == 0? deletionIDTree1 : tupleI, 
+                                          tupleJ == 0? deletionIDTree2 : tupleJ, 
+                                          0);
+              backQueue.emplace(tupleI, tupleJ, false, true);
+            } 
           }
         }
       }
@@ -688,10 +764,13 @@ namespace ttk {
       computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
                               outputMatching, indR, indC);
 
-      std::cout << "\nMatching with size "<< outputMatching.size()<< " : ";
-      for (auto t : outputMatching) {
-        std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
+      if (cbdDebug) {
+        std::cout << "\nMatching on CBD with size "<< outputMatching.size()<< " : ";
+        for (auto t : outputMatching) {
+          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
+        }
       }
+      
       return distance;
     }
 
@@ -717,6 +796,24 @@ namespace ttk {
                      ftm::MergeTree<dataType> &mTree2,
                      std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
                        &outputMatching) {
+
+      if (cbdDebug) {
+        std::cout << "========================================\n"
+          << "        MergeTree Distance Configuration         \n"
+          << "========================================\n"
+          << std::boolalpha // Prints 'true'/'false' instead of '1'/'0'
+          << "MA_mditz:          " << MA_mditz << "\n"
+          << "acceleration_:     " << acceleration_ << "\n"
+          << "parallelFor:       " << parallelFor << "\n"
+          << "statsTest:         " << statsTest << "\n"
+          << "useThresholdCBD_:  " << useThresholdCBD_ << "\n"
+          << "globalThreshold_:  " << globalThreshold_ << "\n"
+          << "thresholdOfCBD_:   " << thresholdOfCBD_ << "\n"
+          << "branchDecomposition_:   " << branchDecomposition_ << "\n"
+          << "========================================\n";
+      }
+      
+
       Memory m;
       Timer t_total;
 
@@ -728,9 +825,12 @@ namespace ttk {
       // ---------------------
       // ----- Preprocessing
       // --------------------
+      std::vector<ftm::idNode> dataMap1; 
+      std::vector<ftm::idNode> dataMap2;
+
       ftm::MergeTree<dataType> mTree1Copy;
       ftm::MergeTree<dataType> mTree2Copy;
-      if(saveTree_) {
+      if(true){//saveTree_) {
         mTree1Copy = ftm::copyMergeTree<dataType>(mTree1);
         mTree2Copy = ftm::copyMergeTree<dataType>(mTree2);
       }
@@ -742,34 +842,55 @@ namespace ttk {
         verifyMergeTreeStructure<dataType>(tree1);
         verifyMergeTreeStructure<dataType>(tree2);
       }
+
+      ftm::MergeTree<dataType> preprocessed_MT1_copy;
+      ftm::MergeTree<dataType> preprocessed_MT2_copy;
+
       if(preprocess_) {
         treesNodeCorr_.resize(2);
         preprocessingPipeline<dataType>(
           mTree1Int, epsilonTree1_, epsilon2Tree1_, epsilon3Tree1_,
-          branchDecomposition_, useMinMaxPair_, cleanTree_, treesNodeCorr_[0]);
+          branchDecomposition_, useMinMaxPair_, cleanTree_, treesNodeCorr_[0], dataMap1, preprocessed_MT1_copy, true, false);
         preprocessingPipeline<dataType>(
           mTree2Int, epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
-          branchDecomposition_, useMinMaxPair_, cleanTree_, treesNodeCorr_[1]);
+          branchDecomposition_, useMinMaxPair_, cleanTree_, treesNodeCorr_[1], dataMap2, preprocessed_MT2_copy,true, false);
       }
       tree1 = &(mTree1Int.tree);
       tree2 = &(mTree2Int.tree);
+
 
       // ---------------------
       // ----- Compute Distance
       // --------------------
       dataType distance
         = computeDistance<dataType>(tree1, tree2, outputMatching);
-      
+
       
       // ---------------------
       // ----- Postprocessing
       // --------------------
-      if(postprocess_ and not MA_mditz) {
-        postprocessingPipeline<dataType>(tree1);
-        postprocessingPipeline<dataType>(tree2);
-        if(branchDecomposition_)
+      if(postprocess_) {
+        std::cout << "Preprocessing...\n";
+        if (MA_mditz) {
+
+          convertCompleteBranchDecompositionMatching<dataType>(outputMatching, dataMap1, dataMap2, 
+                                                            tree1, tree2,   //CBDs
+                                                            &(preprocessed_MT1_copy.tree), &(preprocessed_MT2_copy.tree)); //MergeTrees
+          std::cout << "Preprocessing MA_mditz\n";
+
+          mTree1Int = preprocessed_MT1_copy;
+          mTree2Int = preprocessed_MT2_copy;
+          
+          tree1 = &(mTree1Int.tree);
+          tree2 = &(mTree2Int.tree);  
+          
+        } else {
+          postprocessingPipeline<dataType>(tree1);
+          postprocessingPipeline<dataType>(tree2);
+          if(branchDecomposition_)
           convertBranchDecompositionMatching<dataType>(
             tree1, tree2, outputMatching);
+        }
       }
       // std::cout << "TIME COMP.MATCH. = " << t_match_time << std::endl;
       printMsg("Total", 1, t_total.getElapsedTime(), this->threadNumber_,
@@ -957,11 +1078,10 @@ namespace ttk {
       if(processTree1) {
         if(computeEmptyTree) {
           // --- Forest to empty tree distance
-          computeForestToEmptyDistance(tree1, nodeI, i, treeTable, forestTable);
+          computeForestToEmptyDistance(tree1, nodeI, i, treeTable, forestTable, forestBackTable);
 
           // --- Subtree to empty tree distance
-          computeSubtreeToEmptyDistance(
-            tree1, nodeI, i, treeTable, forestTable);
+          computeSubtreeToEmptyDistance(tree1, nodeI, i, treeTable, forestTable, treeBackTable);
         } else
           classicEditDistance(tree1, tree2, false, false, nodeI,
                               tree2->getRoot(), treeTable, forestTable,
@@ -969,10 +1089,10 @@ namespace ttk {
       } else {
         if(computeEmptyTree) {
           // --- Empty tree to forest distance
-          computeEmptyToForestDistance(tree2, nodeJ, j, treeTable, forestTable);
+          computeEmptyToForestDistance(tree2, nodeJ, j, treeTable, forestTable, forestBackTable);
 
           // --- Empty tree to subtree distance
-          computeEmptyToSubtreeDistance(tree2, nodeJ, j, treeTable, forestTable);
+          computeEmptyToSubtreeDistance(tree2, nodeJ, j, treeTable, forestTable, treeBackTable);
           //}else{
         //MA_mditz, brauch fixing sobald MA_mditz + keepSubtree_
         } else if(checkEntry(nodeI,nodeJ, tree1, tree2)) {
@@ -1407,20 +1527,20 @@ namespace ttk {
               int const i = nodeT + 1;
               // --- Forest to empty tree distance
               computeForestToEmptyDistance(
-                tree, nodeT, i, treeTable, forestTable);
+                tree, nodeT, i, treeTable, forestTable, forestBackTable);
 
               // --- Subtree to empty tree distance
               computeSubtreeToEmptyDistance(
-                tree, nodeT, i, treeTable, forestTable);
+                tree, nodeT, i, treeTable, forestTable, treeBackTable);
             } else {
               int const j = nodeT + 1;
               // --- Empty tree to forest distance
               computeEmptyToForestDistance(
-                tree, nodeT, j, treeTable, forestTable);
+                tree, nodeT, j, treeTable, forestTable, forestBackTable);
 
               // --- Empty tree to subtree distance
               computeEmptyToSubtreeDistance(
-                tree, nodeT, j, treeTable, forestTable);
+                tree, nodeT, j, treeTable, forestTable, treeBackTable);
             }
 
             //MA_mditz

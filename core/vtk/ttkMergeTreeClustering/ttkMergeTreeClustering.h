@@ -346,6 +346,7 @@ public:
   void SetAcceleration(bool acceleration) {
     Acceleration = acceleration;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(Acceleration, bool);
 
@@ -353,6 +354,7 @@ public:
   void SetStatsTest(bool b) {
     statsTest = b;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(statsTest, bool);
 
@@ -360,6 +362,7 @@ public:
   void SetParallelFor(bool b) {
     parallelFor = b;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(parallelFor, bool);
 
@@ -367,6 +370,7 @@ public:
   void SetUseThresholdCBD(bool b) {
     useThresholdCBD = b;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(useThresholdCBD, bool);
 
@@ -374,6 +378,7 @@ public:
   void SetGlobalThreshold(bool b) {
     globalThreshold = b;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(globalThreshold, bool);
 
@@ -381,6 +386,7 @@ public:
   void SetThresholdOfCBD(bool b) {
     thresholdOfCBD = b;
     Modified();
+    resetDataVisualization();
   }
   vtkGetMacro(thresholdOfCBD, bool);
 

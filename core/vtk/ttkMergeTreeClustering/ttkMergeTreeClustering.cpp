@@ -262,6 +262,7 @@ int ttkMergeTreeClustering::runCompute(
       MA_mditz = true;
       KeepSubtree = false;
       NormalizedWasserstein = false;
+      BranchDecomposition = false;
   } 
   if(IsPersistenceDiagram) {
     BranchDecomposition = true;
@@ -272,6 +273,22 @@ int ttkMergeTreeClustering::runCompute(
   printMsg("BranchDecomposition: " + std::to_string(BranchDecomposition));
   printMsg("NormalizedWasserstein: " + std::to_string(NormalizedWasserstein));
   printMsg("KeepSubtree: " + std::to_string(KeepSubtree));
+
+  /*
+  std::cout << "========================================\n"
+          << "     ttkMergeTreeClustering Configuration    \n"
+          << "========================================\n"
+          << "Backend:            " << Backend << "\n"
+          << "Base Module:        " << baseModule << "\n"
+          << "MA mditz:           " << MA_mditz << "\n"
+          << "Acceleration:       " << Acceleration << "\n"
+          << "Stats Test:         " << (statsTest ? "True" : "False") << "\n"
+          << "Parallel For:       " << (parallelFor ? "True" : "False") << "\n"
+          << "Use Threshold CBD:  " << (useThresholdCBD ? "True" : "False") << "\n"
+          << "Global Threshold:   " << globalThreshold << "\n"
+          << "Threshold of CBD:   " << thresholdOfCBD << "\n"
+          << "========================================\n";
+  */
 
   // Call base
   if(not ComputeBarycenter) {
@@ -297,7 +314,6 @@ int ttkMergeTreeClustering::runCompute(
       mergeTreeDistance.setNonMatchingWeight(NonMatchingWeight);
       mergeTreeDistance.setThreadNumber(this->threadNumber_);
       mergeTreeDistance.setDebugLevel(this->debugLevel_);
-
       //mditz
       mergeTreeDistance.setMA_mditz(MA_mditz);
       mergeTreeDistance.setAcceleration(Acceleration);
@@ -309,7 +325,25 @@ int ttkMergeTreeClustering::runCompute(
 
       distance = mergeTreeDistance.execute<dataType>(
         intermediateMTrees[0], intermediateMTrees[1], outputMatching);
-      trees1NodeCorrMesh = mergeTreeDistance.getTreesNodeCorr();
+      
+      if (MA_mditz) {
+        std::vector<ttk::SimplexId> nodeCorr1(
+        intermediateTrees[0]->getNumberOfNodes());
+        std::vector<ttk::SimplexId> nodeCorr2(
+          intermediateTrees[1]->getNumberOfNodes());
+        
+        for(unsigned int i = 0; i < nodeCorr1.size(); i++)
+          nodeCorr1[i] = i;
+        for(unsigned int i = 0; i < nodeCorr2.size(); i++)
+          nodeCorr2[i] = i;
+        trees1NodeCorrMesh.clear();
+        trees1NodeCorrMesh.push_back(nodeCorr1);
+        trees1NodeCorrMesh.push_back(nodeCorr2);
+
+      } else{
+        trees1NodeCorrMesh = mergeTreeDistance.getTreesNodeCorr();
+      }
+
       finalDistances = std::vector<double>{distance};
     } else if(baseModule == 1) {
       BranchMappingDistance branchDist;
@@ -370,7 +404,7 @@ int ttkMergeTreeClustering::runCompute(
         intermediateMTrees[0], intermediateMTrees[1], &outputMatching);
       trees1NodeCorrMesh = pathDist.getTreesNodeCorr();
 
-      // std::vector<ttk::SimplexId>
+      //std::vector<ttk::SimplexId>
       // nodeCorr1(intermediateTrees[0]->getNumberOfNodes());
       // std::vector<ttk::SimplexId>
       // nodeCorr2(intermediateTrees[1]->getNumberOfNodes()); for(ttk::SimplexId
