@@ -870,13 +870,10 @@ namespace ttk {
       // ----- Postprocessing
       // --------------------
       if(postprocess_) {
-        std::cout << "Preprocessing...\n";
         if (MA_mditz) {
-
           convertCompleteBranchDecompositionMatching<dataType>(outputMatching, dataMap1, dataMap2, 
                                                             tree1, tree2,   //CBDs
                                                             &(preprocessed_MT1_copy.tree), &(preprocessed_MT2_copy.tree)); //MergeTrees
-          std::cout << "Preprocessing MA_mditz\n";
 
           mTree1Int = preprocessed_MT1_copy;
           mTree2Int = preprocessed_MT2_copy;
