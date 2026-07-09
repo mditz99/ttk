@@ -288,10 +288,14 @@ namespace ttk {
         &forestBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
+
+      //In case of CBD computation and both subtree nodes, compute all choice pairs
       if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())){
+
         std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
         forestTable[i][j] = std::get<0>(singlePairing_mditzTerm);
         forestBackTable[i][j] = {std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm))};
+
         return;
       } 
         
@@ -531,27 +535,7 @@ namespace ttk {
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
 
-      //Checking both for subtree property is irrelevant by checkEntry, but for completeness for now
-      /*
-      if (MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree())) {
-        //Timer timer;
-        //std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
-        
-        if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
-          timeSinglePairing += timer.getElapsedTime();
-          sizeSinglePairing += children1.size()*children2.size();
-          numSinglePairing += 1;
-          maxdegree1SinglePairing = std::max<int>(maxdegree1SinglePairing,children1.size());
-          maxdegree2SinglePairing = std::max<int>(maxdegree2SinglePairing,children2.size());
 
-        }
-        
-        treeTable[i][j] = forestTable[i][j];//std::get<0>(singlePairing_mditzTerm);
-
-        treeBackTable[i][j] = std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm));
-        return;
-      }
-      */
       bool subtreesCBD = MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree());
 
       dataType treeTerm3;
@@ -618,14 +602,13 @@ namespace ttk {
         int const j = std::get<1>(elem);
         bool useTreeTable = std::get<2>(elem);
         bool deletionSubtree = std::get<3>(elem);
-        //std::cout << "Looking at " << i << ", " << j <<"\n"; 
+
         if(useTreeTable) {
           int const tupleI = std::get<0>(treeBackTable[i][j]);
           int const tupleJ = std::get<1>(treeBackTable[i][j]);
           if(tupleI != 0 && tupleJ != 0) {
             useTreeTable = (tupleI != i || tupleJ != j);
             backQueue.emplace(tupleI, tupleJ, useTreeTable, false);
-            //std::cout << "---- in useTreetable emplaced: " << tupleI <<", " <<tupleJ << " with useTreeTable " << useTreeTable << "\n";
             if(not useTreeTable) { // We have matched i and j
               ftm::idNode const tree1Node = tupleI - 1;
               ftm::idNode const tree2Node = tupleJ - 1;
@@ -636,14 +619,12 @@ namespace ttk {
               outputMatching.emplace_back(tree1Node, tree2Node, cost);
             }
           } 
-        } else if (deletionSubtree) { //For Wasserstein on CBDs s.t. we can use optimum BDT including deletion cases
+        } else if (deletionSubtree) { //For Wasserstein on CBDs s.t. we can compute optimum BDT including deletion cases
           const bool is_i_zero = (i == 0);
 
           auto* primaryTree   = is_i_zero ? tree2 : tree1;
           auto  primaryIdx    = is_i_zero ? j - 1 : i - 1;
           auto  deleteNumTree = is_i_zero ? deletionIDTree1 : deletionIDTree2;
-          //std::cout << "Tuple: " << i << "; " << j << "; " << useTreeTable << "; " << deletionSubtree <<"\n";
-          //std::cout << "deleteNumTree: "<< deleteNumTree <<"; primaryIdx: " << primaryIdx << "; is_i_zero: " << is_i_zero << "\n";
           if (is_i_zero) {
               outputMatching.emplace_back(deleteNumTree, primaryIdx, 0);
           } else {

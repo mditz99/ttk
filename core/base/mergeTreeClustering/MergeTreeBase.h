@@ -775,11 +775,9 @@ namespace ttk {
       //=====================================================
       //Conventions for the result CBD for easier handling throughout the algorithm: 
       //- Subtree node resembling the entire tree are at entry 0
-      //- idNode == Index of node in nodes vector
-      //- Subtree nodes store the higher(closer to root) node's scalar, but just to have an origin for the branch nodes. 
-      //  Theoretically, they do not have any scalar value as they are not part of an underlying BDT.
-      //- Branch nodes store the lowest node's scalar
-
+      //- Subtree nodes store the higher(closer to root) node's scalar to have an origin for the branch nodes. 
+      //- Branch nodes store the lowest node's (the leaf's) scalar
+        
       
       std::vector<ftm::idNode> ccs; 
       inputMTptr->tree.getChildren(cId, ccs);
@@ -1181,9 +1179,6 @@ namespace ttk {
 
       ftm::FTMTree_MT *tree = &(mTree.tree);
       
-      //MA_mditz_print(mTree);
-      
-      
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
       
       // - Delete null persistence pairs and persistence thresholding
@@ -1214,8 +1209,6 @@ namespace ttk {
         std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
       }
       
-      // - Compute branch decomposition
-      // verifyPairsTree(tree);
       if(MA_mditz){
         if (cbdDebug) {
            std::cout << "\n\n========================================\n"
@@ -1310,11 +1303,11 @@ namespace ttk {
                                std::vector<int> &nodeCorr,
                                bool deleteInconsistentNodes = true,
                                bool removeMergedSaddles = false) {
-      ftm::MergeTree<dataType> dummy;
-      std::vector<ftm::idNode> dataMap;                        
+      ftm::MergeTree<dataType> dummyTree;
+      std::vector<ftm::idNode> localDataMap;                        
       preprocessingPipeline<dataType>(
         mTree, epsilonTree, epsilon2Tree, epsilon3Tree, branchDecompositionT,
-        useMinMaxPairT, cleanTreeT, persistenceThreshold_, nodeCorr,dataMap, dummy,
+        useMinMaxPairT, cleanTreeT, persistenceThreshold_, nodeCorr,localDataMap, dummyTree,
         deleteInconsistentNodes, removeMergedSaddles);
     }
 
