@@ -93,12 +93,14 @@ namespace ttk {
                  std::vector<ftm::MergeTree<dataType>> &trees2,
                  std::vector<std::vector<double>> &distanceMatrix) {
       treesNodeCorr_.resize(trees.size());
+      Timer timer;
       for(unsigned int i = 0; i < trees.size(); ++i) {
         preprocessingPipeline<dataType>(
           trees[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
           baseModule_ == 0 ? branchDecomposition_ : false, useMinMaxPair_, true,
           treesNodeCorr_[i], true, baseModule_ == 2);
       }
+      std::cout << "[Time] TotalPreproc: " << timer.getElapsedTime() << "\n";
       executePara<dataType>(trees, distanceMatrix);
       if(trees2.size() != 0) {
         std::vector<std::vector<int>> trees2NodeCorr(trees2.size());
