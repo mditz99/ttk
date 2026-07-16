@@ -40,7 +40,7 @@ namespace ttk {
     double t_assignment_time_ = 0;
 
     bool preprocess_ = true;
-    bool postprocess_ = true;
+    
     bool saveTree_ = false;
     bool onlyEmptyTreeDistance_ = false;
 
@@ -102,10 +102,6 @@ namespace ttk {
 
     void setPreprocess(bool preproc) {
       preprocess_ = preproc;
-    }
-
-    void setPostprocess(bool postproc) {
-      postprocess_ = postproc;
     }
 
     void setTesting(bool test) {
@@ -294,7 +290,8 @@ namespace ttk {
 
         std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
         forestTable[i][j] = std::get<0>(singlePairing_mditzTerm);
-        forestBackTable[i][j] = {std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm))};
+        if(postprocess_)
+          forestBackTable[i][j] = {std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm))};
 
         return;
       } 
@@ -322,7 +319,8 @@ namespace ttk {
           // Compute table value
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
-          forestBackTable[i][j] = forestAssignment;
+          if (postprocess_) 
+            forestBackTable[i][j] = forestAssignment;
           
         } else {
           dataType forestTerm1, forestTerm2;
@@ -343,7 +341,7 @@ namespace ttk {
             = std::min(std::min(forestTerm1, forestTerm2), forestTerm3);
 
           // Add backtracking information
-          if(forestTable[i][j] == forestTerm3) {
+          if(forestTable[i][j] == forestTerm3 && postprocess_) {
             forestBackTable[i][j] = forestAssignment;
           } else if(forestTable[i][j] == forestTerm2) {
             forestBackTable[i][j].push_back(
@@ -400,8 +398,8 @@ namespace ttk {
       if (cbdSubtree) {
         backTrack.emplace_back(cbdSubtreeMin, 0);
       }
-
-      forestBackTable[i][0] = backTrack;
+      if (postprocess_) 
+        forestBackTable[i][0] = backTrack;
     }
 
     template <class dataType>
@@ -410,8 +408,7 @@ namespace ttk {
       ftm::idNode nodeI,
       int i,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable,
-      std::vector<std::vector<std::tuple<int, int>>> &treeBackTable) {
+      std::vector<std::vector<dataType>> &forestTable) {
       if(MA_mditz and tree1->getNode(nodeI)->getIsSubtree())
         treeTable[i][0] = forestTable[i][0];
       else
@@ -452,8 +449,8 @@ namespace ttk {
       if (cbdSubtree) {
         backTrack.emplace_back(0, cbdSubtreeMin);
       }
-
-      forestBackTable[0][j] = backTrack;
+      if (postprocess_) 
+        forestBackTable[0][j] = backTrack;
     }
 
     template <class dataType>
@@ -462,8 +459,7 @@ namespace ttk {
       ftm::idNode nodeJ,
       int j,
       std::vector<std::vector<dataType>> &treeTable,
-      std::vector<std::vector<dataType>> &forestTable,
-      std::vector<std::vector<std::tuple<int, int>>> &treeBackTable) {
+      std::vector<std::vector<dataType>> &forestTable) {
       if(MA_mditz and tree2->getNode(nodeJ)->getIsSubtree())
         treeTable[0][j] = forestTable[0][j];
       else
@@ -547,7 +543,8 @@ namespace ttk {
         // Compute table value
         treeTable[i][j] = treeTerm3;
         // Add backtracking information
-        treeBackTable[i][j] = std::make_tuple(i, j);
+        if (postprocess_) 
+          treeBackTable[i][j] = std::make_tuple(i, j);
         
       } else {
         dataType treeTerm1, treeTerm2;
@@ -565,7 +562,7 @@ namespace ttk {
         treeTable[i][j] = std::min(std::min(treeTerm1, treeTerm2), treeTerm3);
 
         // Add backtracking information
-        if(treeTable[i][j] == treeTerm3) {
+        if(treeTable[i][j] == treeTerm3 && postprocess_) {
           treeBackTable[i][j] = std::make_tuple(i, j);
         } else if(treeTable[i][j] == treeTerm2) {
           treeBackTable[i][j] = std::make_tuple(std::get<1>(treeCoTerm2), j);
@@ -679,23 +676,16 @@ namespace ttk {
         nRows, std::vector<dataType>(nCols));
       std::vector<std::vector<dataType>> forestTable(
         nRows, std::vector<dataType>(nCols));
-      
-      //MA_mditz
-      /*
-      for(int i = 0; i < nRows; i++){
-        for(int j = 0; j < nCols; j++){
-          treeTable[i][i] = std::numeric_limits<dataType>::max();
-          forestTable[i][i] = std::numeric_limits<dataType>::max();
-        }
+
+      std::vector<std::vector<std::tuple<int, int>>> treeBackTable;
+      std::vector<std::vector<std::vector<std::tuple<int, int>>>> forestBackTable;
+
+      if (postprocess_) {
+        // Backtracking tables (output matching)
+        treeBackTable = std::vector<std::vector<std::tuple<int, int>>>(nRows, std::vector<std::tuple<int, int>>(nCols));
+        forestBackTable = std::vector<std::vector<std::vector<std::tuple<int, int>>>>(nRows, std::vector<std::vector<std::tuple<int, int>>>(nCols));
       }
-      */
-     
-      // Backtracking tables (output matching)
-      std::vector<std::vector<std::tuple<int, int>>> treeBackTable(
-        nRows, std::vector<std::tuple<int, int>>(nCols));
-      std::vector<std::vector<std::vector<std::tuple<int, int>>>>
-        forestBackTable(
-          nRows, std::vector<std::vector<std::tuple<int, int>>>(nCols)); 
+       
       int const indR = tree1->getRoot() + 1;
       int const indC = tree2->getRoot() + 1;
       if(MA_mditz and acceleration_){
@@ -742,10 +732,11 @@ namespace ttk {
       // ----- Compute matching
       // --------------------
       
-      computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
+      if (postprocess_)
+        computeMatching<dataType>(tree1, tree2, treeBackTable, forestBackTable,
                               outputMatching, indR, indC);
 
-      if (cbdDebug) {
+      if (postprocess_ && cbdDebug) {
         std::cout << "\nMatching on CBD with size "<< outputMatching.size()<< " : ";
         for (auto t : outputMatching) {
           std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
@@ -1059,7 +1050,7 @@ namespace ttk {
           computeForestToEmptyDistance(tree1, nodeI, i, treeTable, forestTable, forestBackTable);
 
           // --- Subtree to empty tree distance
-          computeSubtreeToEmptyDistance(tree1, nodeI, i, treeTable, forestTable, treeBackTable);
+          computeSubtreeToEmptyDistance(tree1, nodeI, i, treeTable, forestTable);
         } else
           classicEditDistance(tree1, tree2, false, false, nodeI,
                               tree2->getRoot(), treeTable, forestTable,
@@ -1070,7 +1061,7 @@ namespace ttk {
           computeEmptyToForestDistance(tree2, nodeJ, j, treeTable, forestTable, forestBackTable);
 
           // --- Empty tree to subtree distance
-          computeEmptyToSubtreeDistance(tree2, nodeJ, j, treeTable, forestTable, treeBackTable);
+          computeEmptyToSubtreeDistance(tree2, nodeJ, j, treeTable, forestTable);
           //}else{
         //MA_mditz, brauch fixing sobald MA_mditz + keepSubtree_
         } else if(checkEntry(nodeI,nodeJ, tree1, tree2)) {
@@ -1509,7 +1500,7 @@ namespace ttk {
 
               // --- Subtree to empty tree distance
               computeSubtreeToEmptyDistance(
-                tree, nodeT, i, treeTable, forestTable, treeBackTable);
+                tree, nodeT, i, treeTable, forestTable);
             } else {
               int const j = nodeT + 1;
               // --- Empty tree to forest distance
@@ -1518,7 +1509,7 @@ namespace ttk {
 
               // --- Empty tree to subtree distance
               computeEmptyToSubtreeDistance(
-                tree, nodeT, j, treeTable, forestTable, treeBackTable);
+                tree, nodeT, j, treeTable, forestTable);
             }
 
             //MA_mditz

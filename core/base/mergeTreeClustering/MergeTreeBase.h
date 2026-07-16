@@ -35,6 +35,7 @@ namespace ttk {
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
     bool cbdDebug = false;
+    bool postprocess_ = true;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -79,6 +80,10 @@ namespace ttk {
       this->setDebugMsgPrefix(
         "MergeTreeBase"); // inherited from Debug: prefix will be printed
                           // at the beginning of every msg
+    }
+
+    void setPostprocess(bool postproc) {
+      postprocess_ = postproc;
     }
 
     //MA_mditz
@@ -770,6 +775,7 @@ namespace ttk {
       ftm::MergeTree<dataType>* inputMTptr, ftm::idNode pId, ftm::idNode cId ) {
       
       using DataMap = std::vector<ftm::idNode>;
+      bool useDataMap = postprocess_ || useThresholdCBD_;
       //=====================================================
       //Bottom up  through Edge Recursion of Input MergeTree
       //=====================================================
@@ -815,9 +821,13 @@ namespace ttk {
         completeBDptr->scalars->values = (void *)(completeBDptr->scalarsValues->data());
         completeBDptr->scalars->size = completeBDptr->scalarsValues->size();
 
-        DataMap dataMap(2);
-        dataMap[0] = pId;
-        dataMap[1] = cId;
+        DataMap dataMap;
+        if (useDataMap) {
+          dataMap = DataMap(2);
+          dataMap[0] = pId;
+          dataMap[1] = cId;
+        }
+        
 
         return {completeBDptr, dataMap};
       }
@@ -866,13 +876,19 @@ namespace ttk {
 
         //Remember scalars throughout merging and later steps to set at the end.
         std::vector<dataType>scalarsCBD = std::vector<dataType>(numNodesResult);
-        DataMap dataMap(numNodesResult);
+        
 
         //Make main subtree node
         completeBDptr->tree.makeNode(0); 
         scalarsCBD[0] = inputMTptr->tree.template getValue<dataType>(pId);
         completeBDptr->tree.getNode(0)->setIsSubtree(true);
-        dataMap[0] = pId;
+
+        DataMap dataMap;
+        if(useDataMap){
+          dataMap = DataMap(numNodesResult);
+          dataMap[0] = pId;
+        }
+        
 
         //---------------------------------------------------------
         //Merge recursion results
@@ -904,7 +920,8 @@ namespace ttk {
             dataType val = cciIH->tree.template getValue<dataType>(nId);
 
             scalarsCBD[newId] = val;
-            dataMap[newId] = ldmIH[nId];
+            if(useDataMap)
+              dataMap[newId] = ldmIH[nId];
             
           }
 
@@ -934,7 +951,8 @@ namespace ttk {
             completeBDptr->tree.getNode(currExtendedMainBranch)->setOrigin(0); 
             numAddedNodes += 1;
 
-            dataMap[currExtendedMainBranch] = dataMap[currMainBranch];
+            if(useDataMap)
+              dataMap[currExtendedMainBranch] = dataMap[currMainBranch];
 
             //Add arc [Main subtree node, p-l]
             completeBDptr->tree.makeSuperArc(currExtendedMainBranch, 0);
