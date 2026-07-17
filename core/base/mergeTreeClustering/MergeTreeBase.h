@@ -569,7 +569,7 @@ namespace ttk {
         } 
       }
 
-      #pragma omp parallel for schedule(dynamic, 64)
+      //#pragma omp parallel for schedule(dynamic, 64)
       for (ftm::idNode i : subtrees) {
         std::vector<ftm::idNode> iChildren;
         CBD->tree.getChildren(i, iChildren);
@@ -618,7 +618,7 @@ namespace ttk {
       }
     }
     std::vector<char> stay(numNodes, true);
-    #pragma omp parallel for schedule(dynamic, 64)
+    //#pragma omp parallel for schedule(dynamic, 64)
     for (ftm::idNode i : subtrees) {
       std::vector<ftm::idNode> iChildren;
       CBD->tree.getChildren(i, iChildren);
@@ -711,7 +711,7 @@ namespace ttk {
 
       
       unsigned int numTCBD = 0;
-      #pragma omp parallel for schedule(static) reduction(+:numTCBD)
+      //#pragma omp parallel for schedule(static) reduction(+:numTCBD)
       for (unsigned int i = 0; i < numNodes; ++i){
         //This is irrelevant as we expect that reachable includes all stay nodes, but just in case 
         stay[i] = stay[i] && reachable[i];

@@ -339,9 +339,11 @@ namespace ttk {
           // Compute table value
           forestTable[i][j]
             = std::min(std::min(forestTerm1, forestTerm2), forestTerm3);
-
+          if (!postprocess_) {
+            return;
+          }
           // Add backtracking information
-          if(forestTable[i][j] == forestTerm3 && postprocess_) {
+          if(forestTable[i][j] == forestTerm3) {
             forestBackTable[i][j] = forestAssignment;
           } else if(forestTable[i][j] == forestTerm2) {
             forestBackTable[i][j].push_back(
@@ -530,8 +532,6 @@ namespace ttk {
       std::vector<std::vector<std::tuple<int, int>>> &treeBackTable,
       std::vector<ftm::idNode> &children1,
       std::vector<ftm::idNode> &children2) {
-
-
       bool subtreesCBD = MA_mditz and (tree1->getNode(nodeI)->getIsSubtree() and tree2->getNode(nodeJ)->getIsSubtree());
 
       dataType treeTerm3;
@@ -561,8 +561,11 @@ namespace ttk {
         // Compute table value
         treeTable[i][j] = std::min(std::min(treeTerm1, treeTerm2), treeTerm3);
 
+        if (!postprocess_) {
+          return;
+        }
         // Add backtracking information
-        if(treeTable[i][j] == treeTerm3 && postprocess_) {
+        if(treeTable[i][j] == treeTerm3 ) {
           treeBackTable[i][j] = std::make_tuple(i, j);
         } else if(treeTable[i][j] == treeTerm2) {
           treeBackTable[i][j] = std::make_tuple(std::get<1>(treeCoTerm2), j);
