@@ -383,12 +383,12 @@ public:
   vtkGetMacro(globalThreshold, bool);
 
   //MA_mditz
-  void SetThresholdOfCBD(bool b) {
+  void SetThresholdOfCBD(double b) {
     thresholdOfCBD = b;
     Modified();
     resetDataVisualization();
   }
-  vtkGetMacro(thresholdOfCBD, bool);
+  vtkGetMacro(thresholdOfCBD, double);
 
 
   void SetKeepSubtree(bool keepSubtree) {

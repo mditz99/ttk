@@ -258,7 +258,7 @@ public:
     thresholdOfCBD_ = d;
     Modified();
   }
-  vtkGetMacro(thresholdOfCBD_, int);
+  vtkGetMacro(thresholdOfCBD_, double);
   
   bool GetThresholdOfCBD() {
     return thresholdOfCBD_;

@@ -555,8 +555,8 @@ namespace ttk {
       //);
 
       //leavesValues.erase( std::unique( leavesValues.begin(), leavesValues.end() ), leavesValues.end() );
-      //Top additionalChoices entries, duplicates irrelevant
-      dataType lastRankedVal = additionalChoices > 0 ? leavesValues[additionalChoices-1] : std::numeric_limits<dataType>::max();
+      //Top additionalChoices entries, duplicates irrelevant; additionalChoices-th entry might be wrong
+      dataType lastRankedVal = additionalChoices > 0 ? leavesValues[additionalChoices] : std::numeric_limits<dataType>::max();
        
       std::vector<char> stay(numNodes, true);
 
@@ -596,8 +596,8 @@ namespace ttk {
 
         std::partial_sort(iValues.begin(), iValues.begin() + totalChoices , iValues.end(), [](auto &left, auto &right) {
           return left.second > right.second;
-        });   
-
+        });
+        
         for (int j = numChildren-1; j >= 0; --j) {
           if (iValues[j].second >= lastRankedVal) break;
           stay[iValues[j].first] = false;
@@ -655,9 +655,7 @@ namespace ttk {
       std::vector<char> stay = globalThreshold_ ? globalThresholdingCBD(CBD,dataMap, additionalChoices,inputMTptr) : localThresholdingCBD(CBD, dataMap, additionalChoices, inputMTptr);
       //Consequence deletes
       std::vector<char> reachable(numNodes, 0);
-      reachable[0] = 1;                              // root
-
-      //std::vector<ftm::idNode> frontier = {0};
+      reachable[0] = 1;  // root
 
       std::queue<ftm::idNode> traverseQueue;
       traverseQueue.push(0);
@@ -718,6 +716,14 @@ namespace ttk {
         if(stay[i])
           numTCBD++;
       }
+
+      if (cbdDebug) { 
+        std::cout << "Stay: \n";
+        for (unsigned int i = 0; i < numNodes; ++i){
+          std::cout << "(" << i <<", "  << bool(stay[i]) << "); ";
+        }
+      }
+      
           
       auto thresholdCBDptr = std::make_shared<ftm::MergeTree<dataType>>(ttk::ftm::createEmptyMergeTree<dataType>(numTCBD));
       std::vector<ftm::idNode> oldToNew(numNodes);
@@ -993,9 +999,14 @@ namespace ttk {
         std::vector<ftm::idNode> leaves;
         inputMTptr->tree.getLeavesFromTree(leaves);
 
+
         // number of leaves decremented as most persistent branch either way a choice
         unsigned int additionalChoices = static_cast<unsigned int>(((leaves.size()-1) * thresholdOfCBD_) / 100.0);
-
+        if (cbdDebug) {
+          std::cout << "Additional Choices:" << additionalChoices << "\n"
+                    << "Leaves size: " << leaves.size() << "\n"
+                    << "thresholdOfCBD: " << thresholdOfCBD_ << "\n";
+        }
         CBD = transformToThresholdCBD<dataType>(CBD, dataMap, additionalChoices, inputMTptr);
       }
       
@@ -1237,6 +1248,17 @@ namespace ttk {
         }
         
         preprocessed_MT = ftm::copyMergeTree(mTree);
+
+        if (cbdDebug) {
+          std::cout << "\n\n========================================\n"
+          << "     getNodePersistences     \n"
+          << "========================================\n";
+
+          for (unsigned int i = 0; i< tree->getNumberOfNodes(); i++) {
+            std::cout << "Node " << i << ": " << mTree.tree.template getNodePersistence<dataType>(i) << "\n";
+          }
+        }
+
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
         if (cbdDebug) {
@@ -1262,8 +1284,11 @@ namespace ttk {
         std::cout << "Computing BDT with MAmditz " << MA_mditz << " \n";
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
         
-        //std::cout << "BDT:\n";
-        //MA_mditz_print(mTree);
+        if (cbdDebug) {
+          std::cout << "BDT:\n";
+          MA_mditz_print(mTree);
+        }
+        
         if (statsTest){
           std::cout << "[StatsTest] BDTn: " << tree->getRealNumberOfNodes() << "\n";
           std::cout << "[StatsTest] BDTm: " << tree->getRealNumberOfSuperArcs() << "\n";
