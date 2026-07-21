@@ -34,7 +34,8 @@ namespace ttk {
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
-    bool cbdDebug = false;
+    bool cbdDebug = true;
+    bool shortTreeStats = true;
     bool postprocess_ = true;
 
     int assignmentSolverID_ = 0;
@@ -586,7 +587,7 @@ namespace ttk {
           }
         );
 
-        unsigned int totalChoices = numChildren < (additionalChoices+1) ? numChildren : (additionalChoices +1);
+        unsigned int maxChoices = numChildren < (additionalChoices+1) ? numChildren : (additionalChoices +1);
         //std::sort(
         //  iValues.begin(),
         //  iValues.end(),
@@ -594,7 +595,7 @@ namespace ttk {
         //    return left.second > right.second;
         //});
 
-        std::partial_sort(iValues.begin(), iValues.begin() + totalChoices , iValues.end(), [](auto &left, auto &right) {
+        std::partial_sort(iValues.begin(), iValues.begin() + maxChoices , iValues.end(), [](auto &left, auto &right) {
           return left.second > right.second;
         });
         
@@ -1239,6 +1240,11 @@ namespace ttk {
       }
       
       if(MA_mditz){
+        if (shortTreeStats) {
+          std::cout << "\n\n========================================\n"
+          << "Preprocessed merge Tree size: " <<tree->getNumberOfNodes() <<"\n"
+          << "========================================\n";
+        }
         if (cbdDebug) {
            std::cout << "\n\n========================================\n"
           << "     Preprocessed Merge Tree     \n"
@@ -1261,6 +1267,12 @@ namespace ttk {
 
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
+        if (shortTreeStats) {
+          std::cout << "\n\n========================================\n"
+          << "CBD size: " <<tree->getNumberOfNodes() <<"\n"
+          << "========================================\n";
+        }
+
         if (cbdDebug) {
           std::string title = useThresholdCBD_ ? "Thresholded CBD with " + std::to_string(thresholdOfCBD_) + "\% delta" : "Complete Branch Decomposition";
            std::cout << "\n\n========================================\n"
@@ -1281,9 +1293,13 @@ namespace ttk {
       
       if(not MA_mditz and branchDecompositionT
          and (not isPersistenceDiagram_ or convertToDiagram_)){
-        std::cout << "Computing BDT with MAmditz " << MA_mditz << " \n";
         tree = computeBranchDecomposition<dataType>(tree, treeNodeMerged);
         
+        if (shortTreeStats) {
+          std::cout << "\n\n========================================\n"
+          << "BDT number of nodes:  "<< tree->getNumberOfNodes() <<"     \n"
+          << "========================================\n";
+        }
         if (cbdDebug) {
           std::cout << "BDT:\n";
           MA_mditz_print(mTree);

@@ -288,10 +288,10 @@ namespace ttk {
       //In case of CBD computation and both subtree nodes, compute all choice pairs
       if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())){
 
-        std::tuple<dataType, ftm::idNode, ftm::idNode> singlePairing_mditzTerm = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
-        forestTable[i][j] = std::get<0>(singlePairing_mditzTerm);
+        std::tuple<dataType, ftm::idNode, ftm::idNode> term_pairChoices = computeTermSinglePairing_MA_mditz<dataType>(children1,children2,treeTable);
+        forestTable[i][j] = std::get<0>(term_pairChoices);
         if(postprocess_)
-          forestBackTable[i][j] = {std::make_tuple(std::get<1>(singlePairing_mditzTerm), std::get<2>(singlePairing_mditzTerm))};
+          forestBackTable[i][j] = {std::make_tuple(std::get<1>(term_pairChoices), std::get<2>(term_pairChoices))};
 
         return;
       } 
