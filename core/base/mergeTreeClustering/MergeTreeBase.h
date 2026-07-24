@@ -1248,10 +1248,11 @@ namespace ttk {
         std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
         std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
       }
-      
-      if(MA_mditz){
-        if (shortTreeStats) {
-          std::cout << "\nPreprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n";
+
+      if (shortTreeStats) {
+          std::cout << "\n\n========================================\n"
+          << "Preprocessed merge Tree size: " <<tree->getRealNumberOfNodes() <<"\n"
+          << "========================================\n";
         }
         if (cbdDebug) {
            std::cout << "\n\n========================================\n"
@@ -1260,9 +1261,10 @@ namespace ttk {
           MA_mditz_print(mTree);
           std::cout << "========================================\n";
         }
+      
+      if(MA_mditz){
         
         preprocessed_MT = ftm::copyMergeTree(mTree);
-
         /*
         if (cbdDebug) {
           std::cout << "\n\n========================================\n"
@@ -1274,6 +1276,7 @@ namespace ttk {
           }
         }
         */
+
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         
         if (shortTreeStats) {
@@ -1781,7 +1784,57 @@ namespace ttk {
                                                     ftm::FTMTree_MT *MT2
                                                     ) {
 
+      std::vector<std::tuple<ftm::idNode, ftm::idNode, double>> toAdd;
+
+      unsigned int numNodesCBD1 = dataMap1.size();
+      unsigned int numNodesCBD2 = dataMap2.size();
+
+      for(auto mTuple : outputMatching) {
+        ftm::idNode node1 = std::get<0>(mTuple);
+        ftm::idNode node2 = std::get<1>(mTuple);
+
+        bool mapped1 = node1 < numNodesCBD1;
+        bool mapped2 = node2 < numNodesCBD2;
+
+        //Else assignment is irrelevant, but getNode should not be called for non mapped
+        bool isSubtree1 = mapped1 ? CBD1->getNode(node1)->getIsSubtree() : true;
+        bool isSubtree2 = mapped2 ? CBD2->getNode(node2)->getIsSubtree() : true;
+
+        ftm::idNode  MTnode1;
+        ftm::idNode MTnode2;
+
+        if (mapped1) MTnode1 = dataMap1[node1];
+        if (mapped2) MTnode2 = dataMap2[node2];
+
+         
+        double cost = std::get<2>(mTuple);
+        if (mapped1 && mapped2 && !isSubtree1 && !isSubtree2) toAdd.emplace_back(MTnode1, MTnode2 ,cost);
+
+        ftm::idNode  branchOrigin1;
+        if (mapped1 && !isSubtree1) {
+          branchOrigin1 = dataMap1[CBD1->getParent(node1)];
+          MT1->getNode(branchOrigin1)->setOrigin(MTnode1);
+          MT1->getNode(MTnode1)->setOrigin(branchOrigin1);
+        }
+
+        ftm::idNode  branchOrigin2;
+        if (mapped2 && !isSubtree2) {
+          branchOrigin2 = dataMap2[CBD2->getParent(node2)];
+          MT2->getNode(branchOrigin2)->setOrigin(MTnode2);
+          MT2->getNode(MTnode2)->setOrigin(branchOrigin2);
+        }
+
+        if (mapped1 && mapped2 && !isSubtree1 && !isSubtree2) toAdd.emplace_back(branchOrigin1, branchOrigin2 ,cost);
+      }
+      outputMatching.clear();
+      outputMatching.insert(outputMatching.end(), toAdd.begin(), toAdd.end());
+
       if (cbdDebug) {
+        std::cout << "\nMatching converted from CBD to Merge Tree with size "<< outputMatching.size()<< " : ";
+        for (auto t : outputMatching) {
+          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<"), ";
+        }
+
         std::cout << "\ndataMap1 with size "<< dataMap1.size()<< " : ";
         int i=0;
         for (auto t : dataMap1) {
@@ -1806,51 +1859,6 @@ namespace ttk {
           std::cout << "(" << nId <<";"<< MT2->getNode(nId)->getOrigin() <<"), ";
         }
         */
-      }
-
-      std::vector<std::tuple<ftm::idNode, ftm::idNode, double>> toAdd;
-
-      unsigned int numNodesCBD1 = dataMap1.size();
-      unsigned int numNodesCBD2 = dataMap2.size();
-
-      for(auto mTuple : outputMatching) {
-        ftm::idNode node1 = std::get<0>(mTuple);
-        ftm::idNode node2 = std::get<1>(mTuple);
-
-        bool mapped1 = node1 < numNodesCBD1;
-        bool mapped2 = node2 < numNodesCBD2;
-
-        ftm::idNode  MTnode1;
-        ftm::idNode MTnode2;
-
-        if (mapped1) MTnode1 = dataMap1[node1];
-        if (mapped2) MTnode2 = dataMap2[node2];
-         
-        double cost = std::get<2>(mTuple);
-        if (mapped1 && mapped2) toAdd.emplace_back(MTnode1, MTnode2 ,cost);
-
-        
-        if (!CBD1->getNode(node1)->getIsSubtree() && mapped1) {
-          ftm::idNode  branchOrigin1 = dataMap1[CBD1->getParent(node1)];
-          MT1->getNode(branchOrigin1)->setOrigin(MTnode1);
-          MT1->getNode(MTnode1)->setOrigin(branchOrigin1);
-        }
-        
-        if (!CBD2->getNode(node2)->getIsSubtree() && mapped2) {
-          ftm::idNode  branchOrigin2 = dataMap2[CBD2->getParent(node2)];
-          MT2->getNode(branchOrigin2)->setOrigin(MTnode2);
-          MT2->getNode(MTnode2)->setOrigin(branchOrigin2);
-        }
-        
-      }
-      outputMatching.clear();
-      outputMatching.insert(outputMatching.end(), toAdd.begin(), toAdd.end());
-
-      if (cbdDebug) {
-        std::cout << "\nMatching converted from CBD to Merge Tree with size "<< outputMatching.size()<< " : ";
-        for (auto t : outputMatching) {
-          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
-        }
       }
     }
 

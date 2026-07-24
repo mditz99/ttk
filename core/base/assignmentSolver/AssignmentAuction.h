@@ -247,6 +247,38 @@ namespace ttk {
     return lowerBoundCost;
   }
 
+
+  constexpr size_t nmax {100};
+
+  template <typename dataType>
+  size_t number_of_digits(dataType n) {
+    std::ostringstream strs;
+
+    strs << n;
+    return strs.str().size();
+  }
+
+  template <typename dataType>
+  void print_matrix(std::vector<std::vector<dataType>> M , size_t n, size_t m) {
+    size_t max_len_per_column[nmax];
+
+    for (size_t j = 0; j < m; ++j) {
+      size_t max_len {};
+
+      for (size_t i = 0; i < n; ++i)
+        if (const auto num_length {number_of_digits(M[i][j])}; num_length > max_len)
+          max_len = num_length;
+
+      max_len_per_column[j] = max_len;
+    }
+
+    for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < m; ++j)
+        std::cout << (j == 0 ? "\n| " : "") << std::setw(max_len_per_column[j]) << M[i][j] << (j == m - 1 ? " |" : " ");
+
+    std::cout << '\n';
+  }
+
   template <typename dataType>
   int AssignmentAuction<dataType>::run(std::vector<MatchingType> &matchings) {
     initEpsilon();
@@ -267,6 +299,12 @@ namespace ttk {
     // Make balanced cost matrix
     if(not this->balancedAssignment)
       this->makeBalancedMatrix(this->costMatrix);
+
+    //Florian: Print hier reinhämmern  
+    std::cout << "========================================\n"
+          << "        Cost Matrix         \n"
+          << "========================================\n";
+    print_matrix(this->costMatrix, this->costMatrix.size(), this->costMatrix[0].size());
 
     // Get lower bound cost
     lowerBoundCost = getLowerBoundCost(this->costMatrix);

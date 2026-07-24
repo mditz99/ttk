@@ -306,6 +306,7 @@ namespace ttk {
         forestTerm3 = forestAssignmentProblem<dataType>(
           tree1, tree2, treeTable, children1, children2, forestAssignment);
         
+        
         if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
           std::cout << "[StatsTest] AssInst: " << children1.size()*children2.size() << "\n"; 
           t_assignment_time_ += t_assignment.getElapsedTime();
@@ -319,6 +320,18 @@ namespace ttk {
           // Compute table value
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
+          if (!MA_mditz  && cbdDebug) {
+            std::cout <<"\n" << i << ", " << j << " hat forestTerm3 mit cost " << forestTerm3 << " und Assignment: ";
+            for(auto a : forestAssignment)
+              std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << "), ";
+            std::cout <<"Tree and Forest Table during assigment:\n";
+            for(unsigned int k = 0; k < treeTable.size(); k++){
+              for(unsigned int l = 0; l < treeTable[0].size(); l++){
+                std::cout << "("<<k <<";" << l <<"; S: "<< treeTable[k][l]<<"; F: " << forestTable[k][l]<<") "; 
+              }
+              std::cout << "\n";
+            }
+          }
           if (postprocess_) 
             forestBackTable[i][j] = forestAssignment;
           
@@ -707,7 +720,6 @@ namespace ttk {
       Timer EDtime;
       computeEditDistance(tree1, tree2, treeTable, forestTable, treeBackTable,
                           forestBackTable, nRows, nCols);
-      //std::cout << nodesDone << " pairs out of " << (nRows -1 )*(nCols -1) <<" (|T1|*|T2|) computed" << std::endl;
       
       dataType distance = treeTable[indR][indC];
 
@@ -728,6 +740,15 @@ namespace ttk {
           }
         }
       }
+
+      std::cout <<"Tree and Forest Table:\n";
+      for(unsigned int i = 0; i < nRows; i++){
+        for(unsigned int j = 0; j < nCols; j++){
+          std::cout << "("<<i <<";" << j <<"; S: "<< treeTable[i][j]<<"; F: " << forestTable[i][j]<<") "; 
+        }
+        std::cout << "\n";
+      }
+
       if(distanceSquaredRoot_)
         distance = std::sqrt(distance);
       
@@ -850,7 +871,14 @@ namespace ttk {
         = computeDistance<dataType>(tree1, tree2, outputMatching);
 
       if (cbdDebug) {
-        std::cout << "\nMatching after compute Distance "<< outputMatching.size()<< " : ";
+        std::cout << "\n========================================\n";
+        std::cout << "Tree1:\n";
+        MA_mditz_print(mTree1);
+        std::cout << "========================================\n";
+        std::cout << "\n\nTree2:\n";
+        MA_mditz_print(mTree2);
+        std::cout << "========================================\n";
+        std::cout << "\n\nMatching after compute Distance "<< outputMatching.size()<< " : ";
         for (auto t : outputMatching) {
           std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
         }
