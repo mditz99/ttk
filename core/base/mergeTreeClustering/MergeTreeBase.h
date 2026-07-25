@@ -34,7 +34,7 @@ namespace ttk {
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
-    bool cbdDebug = true;
+    bool cbdDebug = false;
     bool shortTreeStats = false;
     bool postprocess_ = true;
 

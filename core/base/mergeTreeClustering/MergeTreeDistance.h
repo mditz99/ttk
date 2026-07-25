@@ -53,6 +53,7 @@ namespace ttk {
     double minMaxPairWeight_ = 1.0;
 
     //MA_mditz Debugging
+    bool sortForestSolverInput = false;
     int nodesDone = 0;
     double itParentTime = 0;
     double computeTime = 0;
@@ -303,6 +304,16 @@ namespace ttk {
         // Term 3
         Timer t_assignment;
         std::vector<std::tuple<int, int>> forestAssignment;
+        
+        if (sortForestSolverInput) {
+          std::sort(children1.begin(), children1.end(), [tree1](auto &left, auto &right) {
+            return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
+          });
+          std::sort(children2.begin(), children2.end(), [tree2](auto &left, auto &right) {
+            return tree2->getValue<dataType>(left) < tree2->getValue<dataType>(right);
+          });
+        }
+
         forestTerm3 = forestAssignmentProblem<dataType>(
           tree1, tree2, treeTable, children1, children2, forestAssignment);
         
@@ -320,18 +331,14 @@ namespace ttk {
           // Compute table value
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
-          if (!MA_mditz  && cbdDebug) {
-            std::cout <<"\n" << i << ", " << j << " hat forestTerm3 mit cost " << forestTerm3 << " und Assignment: ";
-            for(auto a : forestAssignment)
-              std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << "), ";
-            std::cout <<"Tree and Forest Table during assigment:\n";
-            for(unsigned int k = 0; k < treeTable.size(); k++){
-              for(unsigned int l = 0; l < treeTable[0].size(); l++){
-                std::cout << "("<<k <<";" << l <<"; S: "<< treeTable[k][l]<<"; F: " << forestTable[k][l]<<") "; 
-              }
-              std::cout << "\n";
-            }
-          }
+          
+          /*
+          std::cout <<"\n" << i << ", " << j << " hat forestTerm3 mit cost " << forestTerm3 << " und Assignment: ";
+          for(auto a : forestAssignment)
+            std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << "), ";
+          */
+          
+          
           if (postprocess_) 
             forestBackTable[i][j] = forestAssignment;
           
@@ -708,7 +715,7 @@ namespace ttk {
         tree1->getAllNodeRangeLevel(tree1Range_);
         tree2->getAllNodeRangeLevel(tree2Range_);
       }
-      else{
+      if (!MA_mditz) {
         tree1->getAllNodeLevel(tree1Level_);
         tree2->getAllNodeLevel(tree2Level_);
         tree2->getLevelToNode(tree2LevelToNode_);
@@ -740,7 +747,7 @@ namespace ttk {
           }
         }
       }
-
+      /*
       std::cout <<"Tree and Forest Table:\n";
       for(unsigned int i = 0; i < nRows; i++){
         for(unsigned int j = 0; j < nCols; j++){
@@ -748,7 +755,7 @@ namespace ttk {
         }
         std::cout << "\n";
       }
-
+      */
       if(distanceSquaredRoot_)
         distance = std::sqrt(distance);
       

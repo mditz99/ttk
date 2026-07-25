@@ -300,11 +300,12 @@ namespace ttk {
     if(not this->balancedAssignment)
       this->makeBalancedMatrix(this->costMatrix);
 
-    //Florian: Print hier reinhämmern  
+    /*
     std::cout << "========================================\n"
           << "        Cost Matrix         \n"
           << "========================================\n";
     print_matrix(this->costMatrix, this->costMatrix.size(), this->costMatrix[0].size());
+    */
 
     // Get lower bound cost
     lowerBoundCost = getLowerBoundCost(this->costMatrix);
