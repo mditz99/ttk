@@ -302,7 +302,7 @@ namespace ttk {
 
     /*
     std::cout << "========================================\n"
-          << "        Cost Matrix         \n"
+          << "      Balanced Cost Matrix         \n"
           << "========================================\n";
     print_matrix(this->costMatrix, this->costMatrix.size(), this->costMatrix[0].size());
     */

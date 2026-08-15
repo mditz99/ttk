@@ -37,6 +37,7 @@ namespace ttk {
     bool cbdDebug = false;
     bool shortTreeStats = false;
     bool postprocess_ = true;
+    bool sortForestSolverInput = false;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -425,7 +426,7 @@ namespace ttk {
       ftm::idNode const treeRoot = tree->getRoot();
       dataType maxPers = tree->getMaximumPersistence<dataType>();
       dataType threshold = persistenceThresholdT / 100 * maxPers;
-      std::cout <<"[PersistenceThreshold] float: " << threshold << "\n";
+      //std::cout <<"[PersistenceThreshold] float: " << threshold << "\n";
 
       dataType secondMax = tree->getSecondMaximumPersistence<dataType>();
       bool keepOneZeroPersistencePair = (secondMax == 0 or maxPers == 0);
@@ -532,7 +533,7 @@ namespace ttk {
     }
 
     template <class dataType> 
-    std::vector<char> globalThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
+    std::vector<char> globalThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> &CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
       unsigned int numNodes = CBD->tree.getNumberOfNodes();
       std::vector<ftm::idNode> leaves;
       inputMTptr->tree.getLeavesFromTree(leaves);
@@ -605,13 +606,15 @@ namespace ttk {
           stay[iValues[j].first] = false;
         }
         stay[iValues[0].first] = true;
+        CBD->tree.getNode(i)->setOrigin(iValues[0].first);
+        //std::cout << i << " 's Origin is set to " << iValues[0].first << " \n";
       }
 
       return stay;
     }
     
     template <class dataType> 
-    std::vector<char> localThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
+    std::vector<char> localThresholdingCBD(std::shared_ptr<ftm::MergeTree<dataType>> &CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices, ftm::MergeTree<dataType>* inputMTptr){
     unsigned int numNodes = CBD->tree.getNumberOfNodes();
     std::vector<ftm::idNode> subtrees;
     for (unsigned int i = 0; i < numNodes; ++i) {
@@ -651,7 +654,7 @@ namespace ttk {
     }
 
     template <class dataType> 
-    std::shared_ptr<ftm::MergeTree<dataType>> transformToThresholdCBD(std::shared_ptr<ftm::MergeTree<dataType>> CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices,ftm::MergeTree<dataType>* inputMTptr){
+    std::shared_ptr<ftm::MergeTree<dataType>> transformToThresholdCBD(std::shared_ptr<ftm::MergeTree<dataType>> &CBD, std::vector<ftm::idNode> &dataMap, int additionalChoices,ftm::MergeTree<dataType>* inputMTptr){
       unsigned int numNodes = CBD->tree.getNumberOfNodes();   
       
       std::vector<char> stay = globalThreshold_ ? globalThresholdingCBD(CBD,dataMap, additionalChoices,inputMTptr) : localThresholdingCBD(CBD, dataMap, additionalChoices, inputMTptr);
@@ -728,6 +731,7 @@ namespace ttk {
       
           
       auto thresholdCBDptr = std::make_shared<ftm::MergeTree<dataType>>(ttk::ftm::createEmptyMergeTree<dataType>(numTCBD));
+      
       std::vector<ftm::idNode> oldToNew(numNodes);
 
       std::vector<dataType>scalarsTCBD = std::vector<dataType>(numTCBD);
@@ -748,16 +752,34 @@ namespace ttk {
             ttk::ftm::Node* oldNode = CBD->tree.getNode(nId);
             oldToNew[nId] = numAddedNodes;
             newNode->setIsSubtree(oldNode->getIsSubtree());
-            if (!oldNode->getIsSubtree()) {
+
+            
+            
+            
+            
+            if (!oldNode->getIsSubtree() || sortForestSolverInput) {
               newNode->setOrigin(oldToNew[oldNode->getOrigin()]); //Should be fine because the only relevant origins are the direct unique parent and by inout CBD's construction they should appear beforehand
-
             }
-
+            if (sortForestSolverInput) {
+              newNode->setDataMap(oldNode->getDataMap());
+            }
+            
             dataType val = CBD->tree.template getValue<dataType>(nId);
             scalarsTCBD[numAddedNodes] = val;
             ++numAddedNodes;
       }
 
+      //Temporary as Origin must be stored for both branch nodes and subtrees, meaning oldToNew must be fully set... This is usually unnecessary
+      if (sortForestSolverInput) {
+        for(unsigned int nId = 0; nId < CBD->tree.getNumberOfNodes(); ++nId){
+          if (!stay[nId]) continue;
+          ttk::ftm::Node* oldNode = CBD->tree.getNode(nId);
+          ttk::ftm::Node* newNode = thresholdCBDptr->tree.getNode(oldToNew[nId]);
+
+          newNode->setOrigin(oldToNew[oldNode->getOrigin()]);
+        }
+      }
+      
 
       //Add all arcs of cciIH 
       for(unsigned int aId = 0; aId < CBD->tree.getNumberOfSuperArcs(); ++aId){ //(By conventions fine traversal of arcs)
@@ -783,7 +805,7 @@ namespace ttk {
       ftm::MergeTree<dataType>* inputMTptr, ftm::idNode pId, ftm::idNode cId ) {
       
       using DataMap = std::vector<ftm::idNode>;
-      bool useDataMap = postprocess_ || useThresholdCBD_;
+      bool useDataMap = postprocess_ || useThresholdCBD_ || sortForestSolverInput;
       //=====================================================
       //Bottom up  through Edge Recursion of Input MergeTree
       //=====================================================
@@ -834,6 +856,11 @@ namespace ttk {
           dataMap = DataMap(2);
           dataMap[0] = pId;
           dataMap[1] = cId;
+          //Temporary
+          if (sortForestSolverInput) {
+            completeBDptr->tree.getNode(0)->setDataMap(pId);
+            completeBDptr->tree.getNode(1)->setDataMap(cId);
+          }
         }
         
 
@@ -895,6 +922,10 @@ namespace ttk {
         if(useDataMap){
           dataMap = DataMap(numNodesResult);
           dataMap[0] = pId;
+          //Temporary
+          if (sortForestSolverInput) {
+            completeBDptr->tree.getNode(0)->setDataMap(pId);
+          }
         }
         
 
@@ -928,9 +959,13 @@ namespace ttk {
             dataType val = cciIH->tree.template getValue<dataType>(nId);
 
             scalarsCBD[newId] = val;
-            if(useDataMap)
+            if(useDataMap){ 
               dataMap[newId] = ldmIH[nId];
-            
+              //Temporary
+              if (sortForestSolverInput) {
+                completeBDptr->tree.getNode(newId)->setDataMap(nId);
+              }
+            }
           }
 
           //Add all arcs of cciIH 
@@ -1181,7 +1216,8 @@ namespace ttk {
         std::cout << "Node " << i ; 
         std::cout << "\n---Scalar: "  << exp.tree.template getValue<dataType>(i);
         std::cout << "\n---Is subtree: " << exp.tree.getNode(i)->getIsSubtree() ;
-        if(!exp.tree.getNode(i)->getIsSubtree()){
+        //Temporary
+        if(!exp.tree.getNode(i)->getIsSubtree() || sortForestSolverInput){
           std::cout << "\n---Origin: " << exp.tree.getNode(i)->getOrigin();
           std::cout << "\n---Origin Scalar: " << exp.tree.template getValue<dataType>(exp.tree.getNode(i)->getOrigin());
         }
@@ -1223,7 +1259,7 @@ namespace ttk {
       
       // - Delete null persistence pairs and persistence thresholding
       persistenceThresholding<dataType>(tree, persistenceThreshold);
-      std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
+      //std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
       
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
@@ -1278,7 +1314,6 @@ namespace ttk {
         */
 
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
-        
         if (shortTreeStats) {
           std::vector<ftm::idNode> subtrees;
           for (unsigned int i = 0; i < tree->getNumberOfNodes(); ++i) {
@@ -1353,6 +1388,12 @@ namespace ttk {
         reverseNodeCorr(tree, nodeCorr);
       }
       
+      if (branchDecompositionT && not MA_mditz && sortForestSolverInput) {
+        for (unsigned int i = 0; i < tree->getNumberOfNodes(); i++) {
+          tree->getNode(i)->setDataMap(nodeCorr[i]);
+        }
+      }
+
       // - Root number verification
       if(tree->getNumberOfRoot() != 1)
         printErr("preprocessingPipeline tree->getNumberOfRoot() != 1");

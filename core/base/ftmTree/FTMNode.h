@@ -35,8 +35,21 @@ namespace ttk {
       //MA_mditz: Complete Branch Decomposition
       bool isSubtree_ = false;
 
+      //Temporary: This is just for testing purposes, should be deleted in the future
+      ftm::idNode dataMap;
+
+
     public:
       // MA_mditz additions
+
+      //This is just for testing purposes, should be deleted in the future
+      inline ftm::idNode getDataMap() {
+        return dataMap;
+      }
+
+      inline void setDataMap(ftm::idNode id) {
+        dataMap = id;
+      }
       
       inline bool getIsSubtree() {
         return isSubtree_;

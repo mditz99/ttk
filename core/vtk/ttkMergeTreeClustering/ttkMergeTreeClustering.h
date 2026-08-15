@@ -122,6 +122,8 @@ private:
   bool globalThreshold = true;
   double thresholdOfCBD = 5.;
 
+  
+
   // Output Options
   bool OutputTrees = true;
   bool OutputSegmentation = false;
@@ -154,6 +156,8 @@ private:
   std::vector<vtkUnstructuredGrid *> treesNodes, treesNodes2;
   std::vector<vtkUnstructuredGrid *> treesArcs, treesArcs2;
   std::vector<vtkDataSet *> treesSegmentation, treesSegmentation2;
+  //Avoiding false caching
+  std::vector<vtkMTimeType> treesNodesMTime;
 
   // Matching
   std::vector<std::tuple<ttk::ftm::idNode, ttk::ftm::idNode, double>>

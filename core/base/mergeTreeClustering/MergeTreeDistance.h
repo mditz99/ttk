@@ -53,7 +53,7 @@ namespace ttk {
     double minMaxPairWeight_ = 1.0;
 
     //MA_mditz Debugging
-    bool sortForestSolverInput = false;
+    
     int nodesDone = 0;
     double itParentTime = 0;
     double computeTime = 0;
@@ -179,12 +179,42 @@ namespace ttk {
       assignmentSolver->run(matchings);
     }
 
+    template <typename dataType>
+  size_t number_of_digits(dataType n) {
+    std::ostringstream strs;
+
+    strs << n;
+    return strs.str().size();
+  }
+
+  template <typename dataType>
+  void print_matrix(std::vector<std::vector<dataType>> M , size_t n, size_t m) {
+    size_t max_len_per_column[nmax];
+
+    for (size_t j = 0; j < m; ++j) {
+      size_t max_len {};
+
+      for (size_t i = 0; i < n; ++i)
+        if (const auto num_length {number_of_digits(M[i][j])}; num_length > max_len)
+          max_len = num_length;
+
+      max_len_per_column[j] = max_len;
+    }
+
+    for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < m; ++j)
+        std::cout << (j == 0 ? "\n| " : "") << std::setw(max_len_per_column[j]) << M[i][j] << (j == m - 1 ? " |" : " ");
+
+    std::cout << '\n';
+  }
+
     template <class dataType>
     void createCostMatrix(std::vector<std::vector<dataType>> &treeTable,
                           std::vector<ftm::idNode> &children1,
                           std::vector<ftm::idNode> &children2,
                           std::vector<std::vector<dataType>> &costMatrix) {
       unsigned int nRows = children1.size(), nCols = children2.size();
+
       for(unsigned int i = 0; i < nRows; ++i) {
         int const forestTableI = children1[i] + 1;
         for(unsigned int j = 0; j < nCols; ++j) {
@@ -208,6 +238,12 @@ namespace ttk {
         costMatrix[nRows][j] = treeTable[0][forestTableJ];
       }
       costMatrix[nRows][nCols] = 0;
+      if (cbdDebug) {
+        std::cout << "========================================\n"
+          << "        Cost Matrix after creation       \n"
+          << "========================================\n";
+        print_matrix(costMatrix, costMatrix.size(), costMatrix[0].size());
+      } 
     }
 
     template <class dataType>
@@ -284,7 +320,9 @@ namespace ttk {
       std::vector<std::vector<std::vector<std::tuple<int, int>>>>
         &forestBackTable,
       std::vector<ftm::idNode> &children1,
-      std::vector<ftm::idNode> &children2) {
+      std::vector<ftm::idNode> &children2,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
 
       //In case of CBD computation and both subtree nodes, compute all choice pairs
       if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() and tree2->getNode(j-1)->getIsSubtree())){
@@ -304,16 +342,123 @@ namespace ttk {
         // Term 3
         Timer t_assignment;
         std::vector<std::tuple<int, int>> forestAssignment;
-        
-        if (sortForestSolverInput) {
+        if (sortForestSolverInput && (!MA_mditz or thresholdOfCBD_ == 0)) {
           std::sort(children1.begin(), children1.end(), [tree1](auto &left, auto &right) {
-            return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
+            using NodeId = ftm::idNode;
+
+            std::vector<NodeId> leftIdx = {
+                static_cast<NodeId>(left), 
+                static_cast<NodeId>(tree1->getNode(left)->getOrigin())
+            };
+            std::vector<dataType> leftVals = {
+                tree1->getValue<dataType>(left), 
+                tree1->getValue<dataType>(tree1->getNode(left)->getOrigin())
+            };
+            size_t leftMaxIdx = std::distance(leftVals.begin(), std::max_element(leftVals.begin(), leftVals.end()));
+            NodeId leftUp = leftIdx[leftMaxIdx];
+
+            std::vector<NodeId> rightIdx = {
+                static_cast<NodeId>(right), 
+                static_cast<NodeId>(tree1->getNode(right)->getOrigin())
+            };
+            std::vector<dataType> rightVals = {
+                tree1->getValue<dataType>(right), 
+                tree1->getValue<dataType>(tree1->getNode(right)->getOrigin())
+            };
+            size_t rightMaxIdx = std::distance(rightVals.begin(), std::max_element(rightVals.begin(), rightVals.end()));
+            NodeId rightUp = rightIdx[rightMaxIdx];
+
+            return tree1->getNode(leftUp)->getDataMap() < tree1->getNode(rightUp)->getDataMap();
+
+            /*
+            if (wbd) {
+              
+              return tree1->getNode(tree1->getNode(left)->getOrigin())->getDataMap() < tree1->getNode(tree1->getNode(right)->getOrigin())->getDataMap();
+            }else {
+              return tree1->getNode(left)->getDataMap() < tree1->getNode(right)->getDataMap();
+            }
+            */
+
+            /*
+            dataType death1;
+            dataType death2;
+            //Still there seems to be something wrong, maybe deletion is just to local, maybe adding death value helps
+            if (wbd) {
+              death1 = tree1->getValue<dataType>(left);
+              death2 = tree1->getValue<dataType>(right);
+            } else {
+              death1 = std::min(tree1->getValue<dataType>(left), tree1->getValue<dataType>(tree1->getNode(left)->getOrigin()));
+              death2 = std::min(tree1->getValue<dataType>(right), tree1->getValue<dataType>(tree1->getNode(right)->getOrigin()));
+            }
+            return (treeTable[left + 1][0] + death1) < (treeTable[right + 1][0] + death2);
+            //Multiple occurences of same death or bith scalar value of branches can lead to different outcomes of the approx. solvers 
+            //return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
+            */
           });
+
           std::sort(children2.begin(), children2.end(), [tree2](auto &left, auto &right) {
-            return tree2->getValue<dataType>(left) < tree2->getValue<dataType>(right);
+            using NodeId = ftm::idNode;
+
+            std::vector<NodeId> leftIdx = {
+                static_cast<NodeId>(left), 
+                static_cast<NodeId>(tree2->getNode(left)->getOrigin())
+            };
+            std::vector<dataType> leftVals = {
+                tree2->getValue<dataType>(left), 
+                tree2->getValue<dataType>(tree2->getNode(left)->getOrigin())
+            };
+            size_t leftMaxIdx = std::distance(leftVals.begin(), std::max_element(leftVals.begin(), leftVals.end()));
+            NodeId leftUp = leftIdx[leftMaxIdx];
+
+            std::vector<NodeId> rightIdx = {
+                static_cast<NodeId>(right), 
+                static_cast<NodeId>(tree2->getNode(right)->getOrigin())
+            };
+            std::vector<dataType> rightVals = {
+                tree2->getValue<dataType>(right), 
+                tree2->getValue<dataType>(tree2->getNode(right)->getOrigin())
+            };
+            size_t rightMaxIdx = std::distance(rightVals.begin(), std::max_element(rightVals.begin(), rightVals.end()));
+            NodeId rightUp = rightIdx[rightMaxIdx];
+
+            return tree2->getNode(leftUp)->getDataMap() < tree2->getNode(rightUp)->getDataMap();
+
+            /*
+            if (wbd) {
+              return tree2->getNode(tree2->getNode(left)->getOrigin())->getDataMap() < tree2->getNode(tree2->getNode(right)->getOrigin())->getDataMap();
+            }else {
+              return tree2->getNode(left)->getDataMap() < tree2->getNode(right)->getDataMap();
+            }
+              */
+            /*
+            dataType death1;
+            dataType death2;
+            //Still there seems to be something wrong, maybe deletion is just to local, maybe adding death value helps
+            if (wbd) {
+              death1 = tree2->getValue<dataType>(left);
+              death2 = tree2->getValue<dataType>(right);
+            } else {
+              death1 = std::min(tree2->getValue<dataType>(left), tree2->getValue<dataType>(tree2->getNode(left)->getOrigin()));
+              death2 = std::min(tree2->getValue<dataType>(right), tree2->getValue<dataType>(tree2->getNode(right)->getOrigin()));
+            }
+            return (treeTable[0][left + 1] + death1) < (treeTable[0][right + 1] + death2);
+            //Multiple occurences of same death or bith scalar value of branches can lead to different outcomes of the approx. solvers 
+            //return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
+            */
           });
         }
 
+        if (cbdDebug) {
+          std::cout << "\nChildren1: ";
+          for (auto c: children1) {
+            std::cout << "(" << c <<", "<< treeTable[c + 1][0] << "), ";
+          }
+          std::cout << "\nChildren2: ";
+          for (auto c: children2) {
+            std::cout << "(" << c <<", "<< treeTable[0][c + 1] << "), ";
+          }
+        }
+        
         forestTerm3 = forestAssignmentProblem<dataType>(
           tree1, tree2, treeTable, children1, children2, forestAssignment);
         
@@ -689,7 +834,20 @@ namespace ttk {
       computeDistance(ftm::FTMTree_MT *tree1,
                       ftm::FTMTree_MT *tree2,
                       std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
-                        &outputMatching) {
+                        &outputMatching
+                      ) {
+        std::vector<ftm::idNode> dataMap1; 
+        std::vector<ftm::idNode> dataMap2;
+        return computeDistance<dataType>(tree1,tree2,outputMatching,dataMap1,dataMap2);
+    }
+    template <class dataType>
+    dataType
+      computeDistance(ftm::FTMTree_MT *tree1,
+                      ftm::FTMTree_MT *tree2,
+                      std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
+                        &outputMatching,
+                      std::vector<ftm::idNode> &dataMap1, 
+                      std::vector<ftm::idNode> &dataMap2) {
       // ---------------------
       // ----- Init dynamic programming tables
       // --------------------
@@ -715,7 +873,7 @@ namespace ttk {
         tree1->getAllNodeRangeLevel(tree1Range_);
         tree2->getAllNodeRangeLevel(tree2Range_);
       }
-      if (!MA_mditz) {
+      if (!MA_mditz || (useThresholdCBD_ && thresholdOfCBD_ == 0)) {
         tree1->getAllNodeLevel(tree1Level_);
         tree2->getAllNodeLevel(tree2Level_);
         tree2->getLevelToNode(tree2LevelToNode_);
@@ -726,7 +884,7 @@ namespace ttk {
       // --------------------
       Timer EDtime;
       computeEditDistance(tree1, tree2, treeTable, forestTable, treeBackTable,
-                          forestBackTable, nRows, nCols);
+                          forestBackTable, nRows, nCols, dataMap1, dataMap2);
       
       dataType distance = treeTable[indR][indC];
 
@@ -775,12 +933,14 @@ namespace ttk {
     dataType computeDistance(
       ftm::FTMTree_MT *tree1,
       ftm::FTMTree_MT *tree2,
-      std::vector<std::tuple<ftm::idNode, ftm::idNode>> &outputMatching) {
+      std::vector<std::tuple<ftm::idNode, ftm::idNode>> &outputMatching,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
       std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
         realOutputMatching;
       
       dataType res
-        = computeDistance<dataType>(tree1, tree2, realOutputMatching);
+        = computeDistance<dataType>(tree1, tree2, realOutputMatching,dataMap1,dataMap2);
       
       for(auto tup : realOutputMatching)
         outputMatching.emplace_back(std::get<0>(tup), std::get<1>(tup));
@@ -856,28 +1016,32 @@ namespace ttk {
       tree2 = &(mTree2Int.tree);
 
       if (cbdDebug) {
-        std::cout << "\nAfter preprocessing dataMap1 with size "<< dataMap1.size()<< " : ";
-        int i=0;
-        for (auto t : dataMap1) {
-          std::cout << "(" <<i <<";"<< t <<"), ";
-          i++;
+        std::cout << "\nAfter preprocessing dataMap1: ";
+        for (unsigned int i = 0; i < tree1->getNumberOfNodes(); ++i){
+          std::cout << "(" <<i <<";"<< tree1->getNode(i)->getDataMap() <<"), ";
         }
 
-        std::cout << "\nAfter preprocessing dataMap2 with size "<< dataMap2.size()<< " : ";
-        i=0;
-        for (auto t : dataMap2) {
-          std::cout << "(" <<i <<";"<< t <<"), ";
-          i++;
+        std::cout << "\nAfter preprocessing dataMap2: ";
+        for (unsigned int i = 0; i < tree2->getNumberOfNodes(); ++i){
+          std::cout << "(" <<i <<";"<< tree2->getNode(i)->getDataMap() <<"), ";
         }
 
+        std::cout << "\n========================================\n";
+        std::cout << "Tree1 after preprocessing:\n";
+        MA_mditz_print(mTree1);
+        std::cout << "========================================\n";
+        std::cout << "\n\nTree2 after preprocessing:\n";
+        MA_mditz_print(mTree2);
+        std::cout << "========================================\n";
       }
       // ---------------------
       // ----- Compute Distance
       // --------------------
       dataType distance
-        = computeDistance<dataType>(tree1, tree2, outputMatching);
+        = computeDistance<dataType>(tree1, tree2, outputMatching, dataMap1, dataMap2);
 
       if (cbdDebug) {
+        /*
         std::cout << "\n========================================\n";
         std::cout << "Tree1:\n";
         MA_mditz_print(mTree1);
@@ -885,10 +1049,11 @@ namespace ttk {
         std::cout << "\n\nTree2:\n";
         MA_mditz_print(mTree2);
         std::cout << "========================================\n";
+        
         std::cout << "\n\nMatching after compute Distance "<< outputMatching.size()<< " : ";
         for (auto t : outputMatching) {
           std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
-        }
+        }*/
       }
       // ---------------------
       // ----- Postprocessing
@@ -914,11 +1079,25 @@ namespace ttk {
         }
       }
       if (cbdDebug) {
-        std::cout << "\nMatching after postprocessing "<< outputMatching.size()<< " : ";
-        for (auto t : outputMatching) {
-          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
+        if (cbdDebug) {
+  
+          std::cout << "\n========================================\n";
+          std::cout << "Tree1 after postprocessing distance:\n";
+          MA_mditz_print(mTree1);
+          std::cout << "========================================\n";
+          std::cout << "\n\nTree2 after postprocessing distance:\n";
+          MA_mditz_print(mTree2);
+          std::cout << "========================================\n";
+          /*
+          std::cout << "\n\nMatching after postprocessing "<< outputMatching.size()<< " : ";
+          for (auto t : outputMatching) {
+            std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
+          }
+          */
         }
       }
+
+
       // std::cout << "TIME COMP.MATCH. = " << t_match_time << std::endl;
       printMsg("Total", 1, t_total.getElapsedTime(), this->threadNumber_,
                debug::LineMode::NEW, debug::Priority::INFO);
@@ -963,7 +1142,9 @@ namespace ttk {
       std::vector<std::vector<std::vector<std::tuple<int, int>>>>
         &forestBackTable,
       int nRows,
-      int nCols) {
+      int nCols,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
       
       Timer t_dyn;
       t_assignment_time_ = 0;
@@ -992,7 +1173,7 @@ namespace ttk {
         */
         
         parallelEditDistance(tree1, tree2, treeTable, forestTable,
-                             treeBackTable, forestBackTable, nRows, nCols);
+                             treeBackTable, forestBackTable, nRows, nCols, dataMap1, dataMap2);
         
         if(statsTest){
           
@@ -1049,20 +1230,19 @@ namespace ttk {
                             ftm::FTMTree_MT *tree1, ftm::FTMTree_MT *tree2){
       if(keepSubtree_)
         return true;
-      if (MA_mditz){
-        bool acc = true;
-        if(acceleration_){
-          int maxlevel1 = std::get<1>(tree1Range_[nodeI]);
-          int maxlevel2 = std::get<1>(tree2Range_[nodeJ]);
-          int minlevel1 = std::get<0>(tree1Range_[nodeI]);
-          int minlevel2 = std::get<0>(tree2Range_[nodeJ]);
-
-          acc = not (maxlevel1 < minlevel2 or maxlevel2< minlevel1);
-        }
-        return acc and (tree1->getNode(nodeI)->getIsSubtree() == tree2->getNode(nodeJ)->getIsSubtree());
+      if (!MA_mditz or (useThresholdCBD_ && thresholdOfCBD_ == 0)) {
+        return tree1Level_[nodeI] == tree2Level_[nodeJ];
       }
-      return tree1Level_[nodeI] == tree2Level_[nodeJ];
+      bool acc = true;
+      if(acceleration_){
+        int maxlevel1 = std::get<1>(tree1Range_[nodeI]);
+        int maxlevel2 = std::get<1>(tree2Range_[nodeJ]);
+        int minlevel1 = std::get<0>(tree1Range_[nodeI]);
+        int minlevel2 = std::get<0>(tree2Range_[nodeJ]);
 
+        acc = not (maxlevel1 < minlevel2 or maxlevel2< minlevel1);
+      }
+      return acc and (tree1->getNode(nodeI)->getIsSubtree() == tree2->getNode(nodeJ)->getIsSubtree());
     }
     
     template <class dataType>
@@ -1129,8 +1309,10 @@ namespace ttk {
           std::vector<ftm::idNode> children2;
           tree2->getChildren(nodeJ, children2);
           // --- Forests distance
+          std::vector<ftm::idNode> dataMap1;
+          std::vector<ftm::idNode> dataMap2;
           computeForestsDistance(tree1, tree2, i, j, treeTable, forestTable,
-                                 forestBackTable, children1, children2);
+                                 forestBackTable, children1, children2, dataMap1, dataMap2);
 
           // --- Subtrees distance
           computeSubtreesDistance(tree1, tree2, i, j, nodeI, nodeJ, treeTable,
@@ -1154,7 +1336,9 @@ namespace ttk {
       std::vector<std::vector<std::vector<std::tuple<int, int>>>>
         &forestBackTable,
       int ttkNotUsed(nRows),
-      int ttkNotUsed(nCols)) {
+      int ttkNotUsed(nCols),
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
       std::vector<int> tree1NodeChildSize, tree2NodeChildSize;
       for(unsigned int i = 0; i < tree1->getNumberOfNodes(); ++i) {
         std::vector<ftm::idNode> children;
@@ -1194,7 +1378,7 @@ namespace ttk {
       parallelTreeDistance_v2(tree1, tree2, true, 0, tree1Leaves,
                               tree1NodeChildSize, tree2Leaves,
                               tree2NodeChildSize, treeTable, forestTable,
-                              treeBackTable, forestBackTable, true);
+                              treeBackTable, forestBackTable, dataMap1, dataMap2, true);
       //std::cout << "T1 -> T2: " << timeOfSteps.getElapsedTime() - sub << std::endl;
 
       //MA_mditz
@@ -1232,6 +1416,8 @@ namespace ttk {
       std::vector<std::vector<std::tuple<int, int>>> &treeBackTable,
       std::vector<std::vector<std::vector<std::tuple<int, int>>>>
         &forestBackTable,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2,
       bool firstCall = false) {
       ftm::idNode const nodeT = -1;
       ftm::FTMTree_MT *treeT = (isTree1) ? tree1 : tree2;
@@ -1242,7 +1428,7 @@ namespace ttk {
       if(isTree1)
         for(ftm::idNode const leaf : tree1Leaves)
           treeQueue.emplace(leaf);
-      else if(keepSubtree_ or MA_mditz)
+      else if(keepSubtree_ || (MA_mditz && (!thresholdOfCBD_ || thresholdOfCBD_ != 0)))
         for(ftm::idNode const leaf : tree2Leaves)
           treeQueue.emplace(leaf);
       else if(tree1Level_[i - 1] < (int)tree2LevelToNode_.size())
@@ -1254,13 +1440,13 @@ namespace ttk {
                                  tree1NodeChildSize, tree2Leaves,
                                  tree2NodeChildSize, treeTable, forestTable,
                                  treeBackTable, forestBackTable, firstCall,
-                                 nodeT, treeChildDone, treeNodeDone, treeQueue);
+                                 nodeT, treeChildDone, treeNodeDone, treeQueue,dataMap1,dataMap2);
       else
         parallelTreeDistanceTask(tree1, tree2, isTree1, i, tree1Leaves,
                                  tree1NodeChildSize, tree2Leaves,
                                  tree2NodeChildSize, treeTable, forestTable,
                                  treeBackTable, forestBackTable, nodeT,
-                                 treeChildDone, treeNodeDone, treeQueue);
+                                 treeChildDone, treeNodeDone, treeQueue,dataMap1,dataMap2);
 
       
     }
@@ -1285,7 +1471,9 @@ namespace ttk {
       ftm::idNode nodeT,
       std::vector<int> &treeChildDone,
       std::vector<bool> &treeNodeDone,
-      std::queue<ftm::idNode> &treeQueue) {
+      std::queue<ftm::idNode> &treeQueue,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
 #ifdef TTK_ENABLE_OPENMP4
 #pragma omp parallel num_threads(this->threadNumber_) if(firstCall)
       {
@@ -1295,7 +1483,7 @@ namespace ttk {
                                  tree1NodeChildSize, tree2Leaves,
                                  tree2NodeChildSize, treeTable, forestTable,
                                  treeBackTable, forestBackTable, nodeT,
-                                 treeChildDone, treeNodeDone, treeQueue);
+                                 treeChildDone, treeNodeDone, treeQueue, dataMap1,dataMap2);
 #ifdef TTK_ENABLE_OPENMP4
       } // pragma omp parallel
 #endif
@@ -1322,7 +1510,9 @@ namespace ttk {
       ftm::idNode nodeT,
       std::vector<int> &treeChildDone,
       std::vector<bool> &treeNodeDone,
-      std::queue<ftm::idNode> &treeQueue) {
+      std::queue<ftm::idNode> &treeQueue,
+      std::vector<ftm::idNode> &dataMap1, 
+      std::vector<ftm::idNode> &dataMap2) {
       //std::cout << "Num threads: " <<omp_get_num_threads()<< std::endl;
       int nodePerTask = nodePerTask_;
       
@@ -1366,7 +1556,7 @@ namespace ttk {
             parallelTreeDistance_v2(
               tree1, tree2, false, t, tree1Leaves, tree1NodeChildSize,
               tree2Leaves, tree2NodeChildSize, treeTable, forestTable,
-              treeBackTable, forestBackTable, false);
+              treeBackTable, forestBackTable, dataMap1,dataMap2,false);
             //}else{
           } else if(checkEntry(nodeI,nodeT,tree1,tree2)){    
              
@@ -1381,7 +1571,7 @@ namespace ttk {
             // --- Forests distance
             
             computeForestsDistance(tree1, tree2, i, j, treeTable, forestTable,
-                                    forestBackTable, children1, children2);
+                                    forestBackTable, children1, children2, dataMap1,dataMap2);
 
             // --- Subtrees distance
             

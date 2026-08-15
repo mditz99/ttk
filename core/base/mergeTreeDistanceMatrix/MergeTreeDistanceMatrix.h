@@ -94,6 +94,10 @@ namespace ttk {
                  std::vector<std::vector<double>> &distanceMatrix) {
       treesNodeCorr_.resize(trees.size());
       Timer timer;
+      #ifdef TTK_ENABLE_OPENMP
+      #pragma omp parallel for num_threads(this->threadNumber_) schedule(dynamic) \
+          shared(trees, treesNodeCorr_)
+      #endif
       for(unsigned int i = 0; i < trees.size(); ++i) {
         preprocessingPipeline<dataType>(
           trees[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,

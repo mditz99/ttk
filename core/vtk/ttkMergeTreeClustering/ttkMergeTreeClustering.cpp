@@ -172,10 +172,21 @@ int ttkMergeTreeClustering::RequestData(vtkInformation *ttkNotUsed(request),
   loadBlocks(inputTrees, blocks);
   loadBlocks(inputTrees2, blocks2);
 
-  // If we have already computed once but the input has changed
-  if(treesNodes.size() != 0 and inputTrees[0]->GetBlock(0) != treesNodes[0])
-    resetDataVisualization();
-
+  if(treesNodesMTime.size() != 0) {
+    bool oneChanged = false;
+    if(treesNodesMTime.size() != inputTrees.size())
+      oneChanged = true;
+    else
+      for(unsigned int i = 0; i < inputTrees.size(); ++i)
+        oneChanged
+          |= inputTrees[i]->GetBlock(0)->GetMTime() != treesNodesMTime[i];
+    if(oneChanged)
+      resetDataVisualization();
+  }
+  treesNodesMTime.resize(inputTrees.size());
+  for(unsigned int i = 0; i < inputTrees.size(); ++i)
+    treesNodesMTime[i] = inputTrees[i]->GetBlock(0)->GetMTime();
+  
   return run<float>(outputVector, inputTrees, inputTrees2);
 }
 
