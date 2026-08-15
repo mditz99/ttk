@@ -952,7 +952,7 @@ namespace ttk {
     dataType execute(ftm::MergeTree<dataType> &mTree1,
                      ftm::MergeTree<dataType> &mTree2,
                      std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
-                       &outputMatching) {
+                       &outputMatching, int tree1Idx = -1, int tree2Idx = -1) {
 
       if (cbdDebug) {
         std::cout << "========================================\n"
@@ -1003,6 +1003,7 @@ namespace ttk {
       ftm::MergeTree<dataType> preprocessed_MT1_copy;
       ftm::MergeTree<dataType> preprocessed_MT2_copy;
 
+      //mditz:This is only entered with MergeTreeClustering
       if(preprocess_) {
         treesNodeCorr_.resize(2);
         preprocessingPipeline<dataType>(
@@ -1034,11 +1035,22 @@ namespace ttk {
         MA_mditz_print(mTree2);
         std::cout << "========================================\n";
       }
+      if(tree1Idx != -1 && tree2Idx != -1){
+        std::stringstream ss;
+        ss <<"("<< tree1Idx << "," << tree2Idx <<") starts computeDistance\n";
+        std::cout << ss.str();
+      }
       // ---------------------
       // ----- Compute Distance
       // --------------------
       dataType distance
-        = computeDistance<dataType>(tree1, tree2, outputMatching, dataMap1, dataMap2);
+        = computeDistance<dataType>(tree1, tree2, outputMatching);
+      
+      if(tree1Idx != -1 && tree2Idx != -1){
+        std::stringstream ss;
+        ss <<"("<< tree1Idx << "," << tree2Idx <<") ended computeDistance\n";
+        std::cout << ss.str();
+      }
 
       if (cbdDebug) {
         /*
@@ -1123,10 +1135,10 @@ namespace ttk {
     dataType execute(
       ftm::MergeTree<dataType> &tree1,
       ftm::MergeTree<dataType> &tree2,
-      std::vector<std::tuple<ftm::idNode, ftm::idNode>> &outputMatching) {
+      std::vector<std::tuple<ftm::idNode, ftm::idNode>> &outputMatching, int tree1Idx = -1, int tree2Idx = -1) {
       std::vector<std::tuple<ftm::idNode, ftm::idNode, double>>
         realOutputMatching;
-      dataType res = execute<dataType>(tree1, tree2, realOutputMatching);
+      dataType res = execute<dataType>(tree1, tree2, realOutputMatching,tree1Idx,tree2Idx);
       for(auto tup : realOutputMatching)
         outputMatching.emplace_back(std::get<0>(tup), std::get<1>(tup));
       return res;
