@@ -121,6 +121,19 @@ Online examples:
             <!-- INPUT PARAMETER WIDGETS -->
                 <!-- Execution options -->
                 ${MERGE_TREE_INPUT_WIDGETS}
+
+                <IntVectorProperty
+                name="DistanceSquaredRoot"
+                command="SetDistanceSquaredRoot"
+                label="Distance Square Root"
+                number_of_elements="1"
+                default_values="1"
+                panel_visibility="advanced">
+                  <Documentation>
+                    The distance will be squared root.
+                  </Documentation>
+                  <BooleanDomain name="bool"/>
+                </IntVectorProperty>
                                 
                 <IntVectorProperty
                 name="ComputeBarycenter"

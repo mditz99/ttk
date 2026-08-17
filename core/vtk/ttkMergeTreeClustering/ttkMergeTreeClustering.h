@@ -121,6 +121,9 @@ private:
   bool useThresholdCBD = true;
   bool globalThreshold = true;
   double thresholdOfCBD = 5.;
+  bool useMostImportantPairs_ = false;
+  int numMostImportantPairs_ = 2;
+  bool distanceSquaredRoot_ = true;
 
   
 
@@ -347,6 +350,14 @@ public:
   vtkGetMacro(NormalizedWasserstein, bool);
 
   //MA_mditz
+    void SetDistanceSquaredRoot(bool distanceSquaredRoot) {
+    distanceSquaredRoot_ = distanceSquaredRoot;
+    Modified();
+  }
+  int GetDistanceSquaredRoot() {
+    return distanceSquaredRoot_;
+  }
+
   void SetAcceleration(bool acceleration) {
     Acceleration = acceleration;
     Modified();
@@ -393,6 +404,22 @@ public:
     resetDataVisualization();
   }
   vtkGetMacro(thresholdOfCBD, double);
+
+  //MA_mditz
+  void SetUseMostImportantPairs(bool b) {
+    useMostImportantPairs_ = b;
+    Modified();
+    resetDataVisualization();
+  }
+  vtkGetMacro(useMostImportantPairs_, bool);
+
+  //MA_mditz
+  void SetNumberOfMostImportantPairs(int i) {
+    numMostImportantPairs_ = i;
+    Modified();
+    resetDataVisualization();
+  }
+  vtkGetMacro(numMostImportantPairs_, int);
 
 
   void SetKeepSubtree(bool keepSubtree) {

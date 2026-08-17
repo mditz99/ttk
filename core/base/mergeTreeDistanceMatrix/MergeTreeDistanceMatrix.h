@@ -166,6 +166,8 @@ namespace ttk {
               mergeTreeDistance.setUseThresholdCBD(useThresholdCBD_);
               mergeTreeDistance.setGlobalThreshold(globalThreshold_);
               mergeTreeDistance.setThresholdOfCBD(thresholdOfCBD_);
+              mergeTreeDistance.setUseMostImportantPairs(useMostImportantPairs_);
+              mergeTreeDistance.setNumberOfMostImportantPairs(numMostImportantPairs_);
 
               mergeTreeDistance.setAssignmentSolver(assignmentSolverID_);
               mergeTreeDistance.setEpsilonTree1(epsilonTree1_);

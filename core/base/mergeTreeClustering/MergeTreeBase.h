@@ -38,6 +38,8 @@ namespace ttk {
     bool shortTreeStats = true;
     bool postprocess_ = true;
     bool sortForestSolverInput = false;
+    bool useMostImportantPairs_ = false;
+    int numMostImportantPairs_ = 2;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -121,6 +123,16 @@ namespace ttk {
     //MA_mditz
     void setThresholdOfCBD(double b){
       thresholdOfCBD_ = b;
+    }
+
+    //MA_mditz
+    void setUseMostImportantPairs(bool b){
+      useMostImportantPairs_ = b;
+    }
+
+    //MA_mditz
+    void setNumberOfMostImportantPairs(int i){
+      numMostImportantPairs_ = i;
     }
 
     void setAssignmentSolver(int assignmentSolver) {
@@ -426,10 +438,7 @@ namespace ttk {
       ftm::idNode const treeRoot = tree->getRoot();
       dataType maxPers = tree->getMaximumPersistence<dataType>();
       dataType threshold = persistenceThresholdT / 100 * maxPers;
-<<<<<<< HEAD
       //std::cout <<"[PersistenceThreshold] float: " << threshold << "\n";
-=======
->>>>>>> 069d7453f01a67d1aea1dbb8c050202f86addf89
 
       dataType secondMax = tree->getSecondMaximumPersistence<dataType>();
       bool keepOneZeroPersistencePair = (secondMax == 0 or maxPers == 0);
@@ -1263,13 +1272,14 @@ namespace ttk {
       
       preprocessTree<dataType>(tree, deleteInconsistentNodes);
       
-      // - Delete null persistence pairs and persistence thresholding
-      persistenceThresholding<dataType>(tree, persistenceThreshold);
-<<<<<<< HEAD
-      //std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
-=======
->>>>>>> 069d7453f01a67d1aea1dbb8c050202f86addf89
-      
+      if (useMostImportantPairs_) {
+        keepMostImportantPairs<dataType>(tree, numMostImportantPairs_, false);
+      } else {
+        // - Delete null persistence pairs and persistence thresholding
+        persistenceThresholding<dataType>(tree, persistenceThreshold);
+        //std::cout << "[PersistenceThreshold] Percentage: " << persistenceThreshold<< "\n";
+      }
+
       // - Merge saddle points according epsilon
       std::vector<std::vector<ftm::idNode>> treeNodeMerged(
         tree->getNumberOfNodes());
@@ -1287,6 +1297,7 @@ namespace ttk {
           }
         }
       }
+      
       size_t preprocTreeSize = tree->getRealNumberOfNodes();
 
       if (statsTest){

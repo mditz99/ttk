@@ -264,6 +264,28 @@ public:
     return thresholdOfCBD_;
   }
 
+  //MA_mditz
+  void SetUseMostImportantPairs(bool d) {
+    useMostImportantPairs_ = d;
+    Modified();
+  }
+  vtkGetMacro(useMostImportantPairs_, bool);
+  
+  bool GetUseMostImportantPairs() {
+    return useMostImportantPairs_;
+  }
+
+  //MA_mditz
+  void SetNumberOfMostImportantPairs(int d) {
+    numMostImportantPairs_ = d;
+    Modified();
+  }
+  vtkGetMacro(numMostImportantPairs_, int);
+  
+  int GetNumberOfMostImportantPairs() {
+    return numMostImportantPairs_;
+  }
+
   void SetDistanceSquaredRoot(bool distanceSquaredRoot) {
     distanceSquaredRoot_ = distanceSquaredRoot;
     Modified();

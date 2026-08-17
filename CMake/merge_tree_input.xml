@@ -123,6 +123,33 @@ default_values="0">
 </IntVectorProperty> 
 
 <IntVectorProperty
+name="UseMostImportantPairs"
+command="SetUseMostImportantPairs"
+label="Use most important pairs field"
+number_of_elements="1"
+default_values="0">
+<BooleanDomain name="bool"/>
+</IntVectorProperty> 
+
+<IntVectorProperty
+                name="NumberOfMostImportantPairs"
+                label="Number Of Most Important Pairs"
+                command="SetNumberOfMostImportantPairs"
+                number_of_elements="1"
+                default_values="0"
+                panel_visibility="advanced">
+                  <Hints>
+                  <PropertyWidgetDecorator type="GenericDecorator"
+                                           mode="visibility"
+                                           property="UseMostImportantPairsField"
+                                           value="1" />
+                  </Hints>
+                  <Documentation>
+                  </Documentation>
+
+</IntVectorProperty>
+
+<IntVectorProperty
 name="UseThresholdCBD"
 command="SetUseThresholdCBD"
 label="Use Threshold CBD"

@@ -186,7 +186,7 @@ int ttkMergeTreeClustering::RequestData(vtkInformation *ttkNotUsed(request),
   treesNodesMTime.resize(inputTrees.size());
   for(unsigned int i = 0; i < inputTrees.size(); ++i)
     treesNodesMTime[i] = inputTrees[i]->GetBlock(0)->GetMTime();
-  
+
   return run<float>(outputVector, inputTrees, inputTrees2);
 }
 
@@ -333,6 +333,11 @@ int ttkMergeTreeClustering::runCompute(
       mergeTreeDistance.setUseThresholdCBD(useThresholdCBD);
       mergeTreeDistance.setGlobalThreshold(globalThreshold);
       mergeTreeDistance.setThresholdOfCBD(thresholdOfCBD);
+      mergeTreeDistance.setUseMostImportantPairs(useMostImportantPairs_);
+      mergeTreeDistance.setNumberOfMostImportantPairs(numMostImportantPairs_);
+
+      //Missed in mditz version
+      mergeTreeDistance.setDistanceSquaredRoot(distanceSquaredRoot_);
 
       distance = mergeTreeDistance.execute<dataType>(
         intermediateMTrees[0], intermediateMTrees[1], outputMatching);
@@ -360,7 +365,7 @@ int ttkMergeTreeClustering::runCompute(
       BranchMappingDistance branchDist;
       branchDist.setBaseMetric(branchMetric);
       branchDist.setAssignmentSolver(AssignmentSolver);
-      branchDist.setSquared(false);
+      branchDist.setSquared(distanceSquaredRoot_);
       branchDist.setComputeMapping(true);
       branchDist.setPreprocess(true);
       branchDist.setBranchDecomposition(false);
