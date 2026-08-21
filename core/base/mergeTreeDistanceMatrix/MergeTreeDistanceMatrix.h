@@ -105,7 +105,9 @@ namespace ttk {
           treesNodeCorr_[i], true, baseModule_ == 2);
       }
       std::cout << "[Time] TotalPreproc: " << timer.getElapsedTime() << "\n";
+      Timer timer2;
       executePara<dataType>(trees, distanceMatrix);
+      std::cout << "[Time] TotalDTime: " << timer.getElapsedTime() << "\n";
       if(trees2.size() != 0) {
         std::vector<std::vector<int>> trees2NodeCorr(trees2.size());
         for(unsigned int i = 0; i < trees.size(); ++i) {
