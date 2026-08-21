@@ -102,7 +102,7 @@ namespace ttk {
         preprocessingPipeline<dataType>(
           trees[i], epsilonTree2_, epsilon2Tree2_, epsilon3Tree2_,
           baseModule_ == 0 ? branchDecomposition_ : false, useMinMaxPair_, true,
-          treesNodeCorr_[i], true, baseModule_ == 2);
+          treesNodeCorr_[i], true, baseModule_ == 2, i);
       }
       std::cout << "[Time] TotalPreproc: " << timer.getElapsedTime() << "\n";
       Timer timer2;
