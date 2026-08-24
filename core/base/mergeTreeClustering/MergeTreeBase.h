@@ -561,16 +561,23 @@ namespace ttk {
         }
       );
 
-      std::partial_sort(leavesValues.begin(), leavesValues.begin() + additionalChoices, leavesValues.end(), std::greater<dataType>{});
+      std::partial_sort(leavesValues.begin(), leavesValues.begin() + additionalChoices + 1, leavesValues.end(), std::greater<dataType>{});
       //std::sort(
       //  leavesValues.begin(),
       //  leavesValues.end(),
       //  std::greater<dataType>{}
       //);
 
+      //std::cout << "Leaves: \n";
+      //for (unsigned int i = 0; i < numLeaves; ++i){
+      //  std::cout << "(" << leaves[i] <<", "  << leavesValues[i] << "); ";
+      //}
+
       //leavesValues.erase( std::unique( leavesValues.begin(), leavesValues.end() ), leavesValues.end() );
       //Top additionalChoices entries, duplicates irrelevant; additionalChoices-th entry might be wrong
       dataType lastRankedVal = additionalChoices > 0 ? leavesValues[additionalChoices] : std::numeric_limits<dataType>::max();
+
+      //std::cout << "lastRankedVal: " << lastRankedVal << "\n";
        
       std::vector<char> stay(numNodes, true);
 
@@ -584,7 +591,7 @@ namespace ttk {
       }
       
 
-      //#pragma omp parallel for schedule(dynamic, 64)
+      #pragma omp parallel for schedule(dynamic, 64)
       for (ftm::idNode i : subtrees) {
         std::vector<ftm::idNode> iChildren;
         CBD->tree.getChildren(i, iChildren);
@@ -601,7 +608,7 @@ namespace ttk {
           }
         );
 
-        unsigned int maxChoices = numChildren < (additionalChoices+1) ? numChildren : (additionalChoices +1);
+        unsigned int maxChoices = std::min(numChildren, (additionalChoices+1));
         //std::sort(
         //  iValues.begin(),
         //  iValues.end(),
