@@ -26,7 +26,8 @@ namespace ttk {
     MergeTree<dataType> makeTree(vtkUnstructuredGrid *treeNodes,
                                  vtkUnstructuredGrid *treeArcs) {
       auto treeNodeIdArray = treeNodes->GetPointData()->GetArray("TreeNodeId");
-
+      auto vertexIdArray = treeNodes->GetPointData()->GetArray("VertexId");
+                          
       // Init Scalars
       auto scalars = std::make_shared<Scalars>();
       vtkSmartPointer<vtkDataArray> const nodesScalar
@@ -51,6 +52,7 @@ namespace ttk {
       // Add Nodes
       for(vtkIdType i = 0; i < scalars->size; ++i) {
         mergeTree.tree.makeNode(i);
+        mergeTree.tree.getNode(i)->setVertexId2((vertexIdArray ? vertexIdArray->GetTuple1(i) : i));
       }
 
       // Add Arcs

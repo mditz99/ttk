@@ -34,12 +34,15 @@ namespace ttk {
     bool useThresholdCBD_ = true;
     bool globalThreshold_ = true;
     double thresholdOfCBD_ = 5.;
-    bool cbdDebug = false;
-    bool shortTreeStats = true;
     bool postprocess_ = true;
     bool sortForestSolverInput = false;
     bool useMostImportantPairs_ = false;
     int numMostImportantPairs_ = 2;
+
+    //Prints for debugging or logging
+    bool cbdDebug = false;
+    bool solverDebug = false;
+    bool shortTreeStats = true;
 
     int assignmentSolverID_ = 0;
     bool epsilon1UseFarthestSaddle_ = false;
@@ -590,7 +593,7 @@ namespace ttk {
         } 
       }
       
-
+      /*
       #pragma omp parallel for schedule(dynamic, 64)
       for (ftm::idNode i : subtrees) {
         std::vector<ftm::idNode> iChildren;
@@ -609,12 +612,6 @@ namespace ttk {
         );
 
         unsigned int maxChoices = std::min(numChildren, (additionalChoices+1));
-        //std::sort(
-        //  iValues.begin(),
-        //  iValues.end(),
-        //  [](auto &left, auto &right) {
-        //    return left.second > right.second;
-        //});
 
         std::partial_sort(iValues.begin(), iValues.begin() + maxChoices , iValues.end(), [](auto &left, auto &right) {
           return left.second > right.second;
@@ -627,6 +624,37 @@ namespace ttk {
         stay[iValues[0].first] = true;
         CBD->tree.getNode(i)->setOrigin(iValues[0].first);
         //std::cout << i << " 's Origin is set to " << iValues[0].first << " \n";
+      }
+      */
+
+      #pragma omp parallel for schedule(dynamic, 64)
+      for (ftm::idNode i : subtrees) {
+        std::vector<ftm::idNode> iChildren;
+        CBD->tree.getChildren(i, iChildren);
+      
+        int numChildren = iChildren.size();
+        //if (numChildren == 0) continue;
+
+        ftm::idNode bestChildId = iChildren[0];
+        dataType maxPers = inputMTptr->tree.template getNodePersistence<dataType>(dataMap[iChildren[0]]);
+
+        // Evaluate each child against lastRankedVal and track the best one
+        for (int j = 0; j < numChildren; ++j) {
+          ftm::idNode childId = iChildren[j];
+          dataType pers = inputMTptr->tree.template getNodePersistence<dataType>(dataMap[childId]);
+
+          if (pers > maxPers) {
+            maxPers = pers;
+            bestChildId = childId;
+          }
+
+          // Stay if it meets or exceeds the global threshold
+          stay[childId] = (pers >= lastRankedVal);
+        }
+
+        // The best child always stays, regardless of lastRankedVal, and is set as origin
+        stay[bestChildId] = true;
+        CBD->tree.getNode(i)->setOrigin(bestChildId);
       }
 
       return stay;
@@ -772,15 +800,13 @@ namespace ttk {
             oldToNew[nId] = numAddedNodes;
             newNode->setIsSubtree(oldNode->getIsSubtree());
 
-            
-            
-            
-            
             if (!oldNode->getIsSubtree() || sortForestSolverInput) {
               newNode->setOrigin(oldToNew[oldNode->getOrigin()]); //Should be fine because the only relevant origins are the direct unique parent and by inout CBD's construction they should appear beforehand
             }
             if (sortForestSolverInput) {
               newNode->setDataMap(oldNode->getDataMap());
+              //newNode->setVertexId(oldNode->getVertexId());
+              newNode->setVertexId2(oldNode->getVertexId2());
             }
             
             dataType val = CBD->tree.template getValue<dataType>(nId);
@@ -879,6 +905,10 @@ namespace ttk {
           if (sortForestSolverInput) {
             completeBDptr->tree.getNode(0)->setDataMap(pId);
             completeBDptr->tree.getNode(1)->setDataMap(cId);
+            //completeBDptr->tree.getNode(0)->setVertexId(inputMTptr->tree.getNode(pId)->getVertexId());
+            //completeBDptr->tree.getNode(1)->setVertexId(inputMTptr->tree.getNode(cId)->getVertexId());
+            completeBDptr->tree.getNode(0)->setVertexId2(inputMTptr->tree.getNode(pId)->getVertexId2());
+            completeBDptr->tree.getNode(1)->setVertexId2(inputMTptr->tree.getNode(cId)->getVertexId2());
           }
         }
         
@@ -944,6 +974,9 @@ namespace ttk {
           //Temporary
           if (sortForestSolverInput) {
             completeBDptr->tree.getNode(0)->setDataMap(pId);
+            //completeBDptr->tree.getNode(0)->setVertexId(inputMTptr->tree.getNode(pId)->getVertexId());
+            completeBDptr->tree.getNode(0)->setVertexId2(inputMTptr->tree.getNode(pId)->getVertexId2());
+
           }
         }
         
@@ -982,7 +1015,9 @@ namespace ttk {
               dataMap[newId] = ldmIH[nId];
               //Temporary
               if (sortForestSolverInput) {
-                completeBDptr->tree.getNode(newId)->setDataMap(nId);
+                newNode->setDataMap(nId);
+                //newNode->setVertexId(oldNode->getVertexId());
+                newNode->setVertexId2(oldNode->getVertexId2());
               }
             }
           }
@@ -1013,8 +1048,19 @@ namespace ttk {
             completeBDptr->tree.getNode(currExtendedMainBranch)->setOrigin(0); 
             numAddedNodes += 1;
 
-            if(useDataMap)
+            
+            if (useDataMap) {
               dataMap[currExtendedMainBranch] = dataMap[currMainBranch];
+              //Temporary
+              if (sortForestSolverInput) {
+                //completeBDptr->tree.getNode(currExtendedMainBranch)->setDataMap(pId);
+                //completeBDptr->tree.getNode(1)->setDataMap(cId);
+                //completeBDptr->tree.getNode(0)->setVertexId(inputMTptr->tree.getNode(pId)->getVertexId());
+                //completeBDptr->tree.getNode(1)->setVertexId(inputMTptr->tree.getNode(cId)->getVertexId());
+                completeBDptr->tree.getNode(currExtendedMainBranch)->setVertexId2(completeBDptr->tree.getNode(currMainBranch)->getVertexId2());
+              }
+            }
+            
 
             //Add arc [Main subtree node, p-l]
             completeBDptr->tree.makeSuperArc(currExtendedMainBranch, 0);
@@ -1222,23 +1268,29 @@ namespace ttk {
     }
 
     template <class dataType>
-    void MA_mditz_print(ftm::MergeTree<dataType>& exp){
-      for (unsigned int i = 0; i < exp.tree.getNumberOfNodes(); ++i){
+    void MA_mditz_print(ftm::MergeTree<dataType> &exp){
+      MA_mditz_print<dataType>(&(exp.tree));
+    }
+    template <class dataType>
+    void MA_mditz_print(ftm::FTMTree_MT *exp){
+      for (unsigned int i = 0; i < exp->getNumberOfNodes(); ++i){
         std::vector<ftm::idNode> cs;
         std::vector<ftm::idNode> ps;
-        exp.tree.getChildren(i, cs);
-        exp.tree.getParents_DAG(i, ps);
+        exp->getChildren(i, cs);
+        exp->getParents_DAG(i, ps);
 
-        if(cs.empty() && ps.empty())
-          continue;
+        //if(cs.empty() && ps.empty())
+        //  continue;
 
         std::cout << "Node " << i ; 
-        std::cout << "\n---Scalar: "  << exp.tree.template getValue<dataType>(i);
-        std::cout << "\n---Is subtree: " << exp.tree.getNode(i)->getIsSubtree() ;
+        std::cout << "\n---Scalar: "  << exp->template getValue<dataType>(i);
+        std::cout << "\n---Is subtree: " << exp->getNode(i)->getIsSubtree() ;
         //Temporary
-        if(!exp.tree.getNode(i)->getIsSubtree() || sortForestSolverInput){
-          std::cout << "\n---Origin: " << exp.tree.getNode(i)->getOrigin();
-          std::cout << "\n---Origin Scalar: " << exp.tree.template getValue<dataType>(exp.tree.getNode(i)->getOrigin());
+        if(!exp->getNode(i)->getIsSubtree() || sortForestSolverInput){
+          std::cout << "\n---Origin: " << exp->getNode(i)->getOrigin();
+          std::cout << "\n---Origin Scalar: " << exp->template getValue<dataType>(exp->getNode(i)->getOrigin());
+          std::cout << "\n---VertexID2: " << exp->getNode(i)->getVertexId2();
+          std::cout << "\n---Origin VertexID2: " << exp->getNode(exp->getNode(i)->getOrigin())->getVertexId2();
         }
         std::cout << "\n---Children: ";
         for (ftm::idNode c: cs){
@@ -1308,6 +1360,7 @@ namespace ttk {
       size_t preprocTreeSize = tree->getRealNumberOfNodes();
       size_t preprocTreeLeaves = tree->getNumberOfLeavesFromTree();
 
+
       if (statsTest){
         std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
         std::cout << "[StatsTest] MTm: " << tree->getRealNumberOfSuperArcs() << "\n";
@@ -1324,17 +1377,6 @@ namespace ttk {
       if(MA_mditz){
         
         preprocessed_MT = ftm::copyMergeTree(mTree);
-        /*
-        if (cbdDebug) {
-          std::cout << "\n\n========================================\n"
-          << "     getNodePersistences     \n"
-          << "========================================\n";
-
-          for (unsigned int i = 0; i< tree->getNumberOfNodes(); i++) {
-            std::cout << "Node " << i << ": " << mTree.tree.template getNodePersistence<dataType>(i) << "\n";
-          }
-        }
-        */
 
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         if (shortTreeStats) {
@@ -1351,17 +1393,7 @@ namespace ttk {
           ss.str("");
           ss.clear();
           
-        }
-
-        if (cbdDebug) {
-          std::string title = useThresholdCBD_ ? "Thresholded CBD with " + std::to_string(thresholdOfCBD_) + "\% delta" : "Complete Branch Decomposition";
-           std::cout << "\n\n========================================\n"
-          << "     "<< title <<"     \n"
-          << "========================================\n";
-          MA_mditz_print(mTree);
-          std::cout << "========================================\n";
-        }
-        
+        } 
 
         tree = &(mTree.tree);
         if (statsTest){
@@ -1380,15 +1412,13 @@ namespace ttk {
           ss << "[" <<treeIdx <<"]:|MT|:" << preprocTreeSize << ";|BDT|:" << tree->getRealNumberOfNodes() << "\n";
           std::cout << ss.str() ;
         }
-        if (cbdDebug) {
-          std::cout << "BDT:\n";
-          MA_mditz_print(mTree);
-        }
         
         if (statsTest){
           std::cout << "[StatsTest] BDTn: " << tree->getRealNumberOfNodes() << "\n";
           std::cout << "[StatsTest] BDTm: " << tree->getRealNumberOfSuperArcs() << "\n";
         }
+
+        
         
       }
       
@@ -1399,14 +1429,15 @@ namespace ttk {
       
       // - Remove min max pair
       // verifyPairsTree(tree);
+      
       if(not useMinMaxPairT and not MA_mditz)
         dontUseMinMaxPair<dataType>(tree);
-
       
       // - Epsilon 2 and 3 processing
       if(branchDecompositionT and not isPersistenceDiagram_ and not MA_mditz)
         persistenceMerging<dataType>(tree, epsilon2Tree, epsilon3Tree);
 
+      
       // - Tree cleaning (remove unused nodes)
       if(cleanTreeT and not MA_mditz) {
         ftm::cleanMergeTree<dataType>(mTree, nodeCorr, branchDecompositionT);
@@ -1419,6 +1450,17 @@ namespace ttk {
           tree->getNode(i)->setDataMap(nodeCorr[i]);
         }
       }
+      /*
+      std::cout << "============================\n";
+      if (not MA_mditz) {
+          std::cout << "BDT:\n";
+          MA_mditz_print(mTree);
+      } else {
+          std::cout << "\nTCBD:\n";
+          MA_mditz_print(mTree);
+      }
+      std::cout << "============================\n";
+      */
 
       // - Root number verification
       if(tree->getNumberOfRoot() != 1)

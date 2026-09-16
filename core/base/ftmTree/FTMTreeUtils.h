@@ -250,6 +250,10 @@ namespace ttk {
           if(nodeCorr[nodeOrigin] == -1)
             treeNew->getNode(nodeOriginIndex)->setOrigin(nodeIndex);
           treeNew->getNode(nodeIndex)->setOrigin(nodeOriginIndex);
+          
+          //Temporary
+          treeNew->getNode(nodeIndex)->setVertexId2(tree->getNode(node)->getVertexId2());
+          treeNew->getNode(nodeOriginIndex)->setVertexId2(tree->getNode(nodeOrigin)->getVertexId2());
 
           newScalarsVector[nodeOriginIndex]
             = tree->getValue<dataType>(nodeOrigin);

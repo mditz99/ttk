@@ -203,6 +203,8 @@ namespace ttk {
           bestSecondValue = value;
       }
 
+      //std::cout << "bidderId = " << bidderId << " _ bestGoodId = " << bestGoodId << "\n";
+
       // Update assignments
       bidderAssignments[bidderId] = bestGoodId;
       if(goodAssignments[bestGoodId] != -1)
@@ -258,30 +260,50 @@ namespace ttk {
     return strs.str().size();
   }
 
-  template <typename dataType>
-  void print_matrix(std::vector<std::vector<dataType>> M , size_t n, size_t m) {
-    size_t max_len_per_column[nmax];
+  
+  template <typename dataType = double>
+  void print_matrix(const std::vector<std::vector<dataType>>& M, size_t n, size_t m) {
+      if (n == 0 || m == 0) return;
 
-    for (size_t j = 0; j < m; ++j) {
-      size_t max_len {};
+      // Use double's maximum significant digits (17) for full lossless precision
+      constexpr int precision = std::numeric_limits<double>::max_digits10;
 
-      for (size_t i = 0; i < n; ++i)
-        if (const auto num_length {number_of_digits(M[i][j])}; num_length > max_len)
-          max_len = num_length;
+      // Use a dynamic vector for column widths
+      std::vector<size_t> max_len_per_column(m, 0);
 
-      max_len_per_column[j] = max_len;
-    }
+      // 1. Calculate max length per column using the exact formatting rules
+      for (size_t j = 0; j < m; ++j) {
+          size_t max_len = 0;
+          for (size_t i = 0; i < n; ++i) {
+              std::ostringstream oss;
+              oss << std::showpoint << std::setprecision(precision);
+              oss << static_cast<double>(M[i][j]);
+              max_len = std::max(max_len, oss.str().length());
+          }
+          max_len_per_column[j] = max_len;
+      }
 
-    for (size_t i = 0; i < n; ++i)
-      for (size_t j = 0; j < m; ++j)
-        std::cout << (j == 0 ? "\n| " : "") << std::setw(max_len_per_column[j]) << M[i][j] << (j == m - 1 ? " |" : " ");
+      // 2. Print the matrix with full precision and proper alignment
+      for (size_t i = 0; i < n; ++i) {
+          for (size_t j = 0; j < m; ++j) {
+              std::cout << (j == 0 ? "\n| " : "");
 
-    std::cout << '\n';
+              std::ostringstream oss;
+              oss << std::showpoint << std::setprecision(precision);
+              oss << static_cast<double>(M[i][j]);
+
+              std::cout << std::setw(max_len_per_column[j]) << oss.str() 
+                        << (j == m - 1 ? " |" : " ");
+          }
+      }
+
+      std::cout << '\n';
   }
 
   template <typename dataType>
   int AssignmentAuction<dataType>::run(std::vector<MatchingType> &matchings) {
     initEpsilon();
+    //std::cout << "--- InitEpsilon: "<< epsilon<<"\n";
     dataType bestCost = std::numeric_limits<dataType>::max();
 
     // Try to avoid price war
@@ -300,12 +322,7 @@ namespace ttk {
     if(not this->balancedAssignment)
       this->makeBalancedMatrix(this->costMatrix);
 
-    /*
-    std::cout << "========================================\n"
-          << "      Balanced Cost Matrix         \n"
-          << "========================================\n";
-    print_matrix(this->costMatrix, this->costMatrix.size(), this->costMatrix[0].size());
-    */
+    
 
     // Get lower bound cost
     lowerBoundCost = getLowerBoundCost(this->costMatrix);
@@ -345,6 +362,22 @@ namespace ttk {
     // Set prices as before
     for(unsigned int i = 0; i < goodPrices.size(); ++i)
       goodPrices[i] += savedPrices[i];
+
+    /*
+    std::cout << "--- Ending Epsilon: "<< epsilon<<"\n"
+              << "--- EpsilonDiviserMultiplier: "<< epsilonDiviserMultiplier<<"\n"
+              << "--- NumberOfRounds: "<< numberOfRounds<<"\n"
+              << "--- iter: "<< iter<<"\n"
+              << "--- assignment: ";
+    for(auto a : matchings)
+      std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << ", "<<std::get<2>(a) <<"), ";
+    std::cout << "\n";
+
+    std::cout << "========================================\n"
+          << "      Balanced Cost Matrix         \n"
+          << "========================================\n";
+    print_matrix(this->costMatrix, this->costMatrix.size(), this->costMatrix[0].size());
+    */
 
     return 0;
   }

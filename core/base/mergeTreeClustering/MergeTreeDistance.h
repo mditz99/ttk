@@ -43,7 +43,6 @@ namespace ttk {
     
     bool saveTree_ = false;
     bool onlyEmptyTreeDistance_ = false;
-
     bool isCalled_ = false;
 
     double auctionEpsilon_ = -1;
@@ -53,7 +52,6 @@ namespace ttk {
     double minMaxPairWeight_ = 1.0;
 
     //MA_mditz Debugging
-    
     int nodesDone = 0;
     double itParentTime = 0;
     double computeTime = 0;
@@ -154,17 +152,20 @@ namespace ttk {
       int const min_dim = std::min(nRows, nCols);
 
       int assignmentSolverID = assignmentSolverID_;
-      if((min_dim <= 2 and max_dim <= 2) or (min_dim <= 1 and max_dim <= 6))
-        assignmentSolverID = 1;
-
+      //if((min_dim <= 2 and max_dim <= 2) or (min_dim <= 1 and max_dim <= 6)){
+      //  assignmentSolverID = 1;
+      //  std::cout << "assignmentSolverID is set to 1 as: (min_dim <= 2 and max_dim <= 2): " <<(min_dim <= 2 and max_dim <= 2)<<"; (min_dim <= 1 and max_dim <= 6): " << (min_dim <= 1 and max_dim <= 6);
+      //}
       switch(assignmentSolverID) {
         case 1:
           solverExhaustive = AssignmentExhaustive<dataType>();
           assignmentSolver = &solverExhaustive;
+          //std::cout << "\nExhaustive solver used\n";
           break;
         case 2:
           solverMunkres = AssignmentMunkres<dataType>();
           assignmentSolver = &solverMunkres;
+          //std::cout << "Munkres solver used\n";
           break;
         case 0:
         default:
@@ -173,6 +174,7 @@ namespace ttk {
           solverAuction.setEpsilonDiviserMultiplier(auctionEpsilonDiviser_);
           solverAuction.setNumberOfRounds(auctionRound_);
           assignmentSolver = &solverAuction;
+          //std::cout << "Auction solver used with:\n";
       }
       assignmentSolver->setInput(costMatrix);
       assignmentSolver->setBalanced(false);
@@ -187,25 +189,43 @@ namespace ttk {
     return strs.str().size();
   }
 
-  template <typename dataType>
-  void print_matrix(std::vector<std::vector<dataType>> M , size_t n, size_t m) {
-    size_t max_len_per_column[nmax];
+  template <typename dataType = double>
+  void print_matrix(const std::vector<std::vector<dataType>>& M, size_t n, size_t m) {
+      if (n == 0 || m == 0) return;
 
-    for (size_t j = 0; j < m; ++j) {
-      size_t max_len {};
+      // Use double's maximum significant digits (17) for full lossless precision
+      constexpr int precision = std::numeric_limits<double>::max_digits10;
 
-      for (size_t i = 0; i < n; ++i)
-        if (const auto num_length {number_of_digits(M[i][j])}; num_length > max_len)
-          max_len = num_length;
+      // Use a dynamic vector for column widths
+      std::vector<size_t> max_len_per_column(m, 0);
 
-      max_len_per_column[j] = max_len;
-    }
+      // 1. Calculate max length per column using the exact formatting rules
+      for (size_t j = 0; j < m; ++j) {
+          size_t max_len = 0;
+          for (size_t i = 0; i < n; ++i) {
+              std::ostringstream oss;
+              oss << std::showpoint << std::setprecision(precision);
+              oss << static_cast<double>(M[i][j]);
+              max_len = std::max(max_len, oss.str().length());
+          }
+          max_len_per_column[j] = max_len;
+      }
 
-    for (size_t i = 0; i < n; ++i)
-      for (size_t j = 0; j < m; ++j)
-        std::cout << (j == 0 ? "\n| " : "") << std::setw(max_len_per_column[j]) << M[i][j] << (j == m - 1 ? " |" : " ");
+      // 2. Print the matrix with full precision and proper alignment
+      for (size_t i = 0; i < n; ++i) {
+          for (size_t j = 0; j < m; ++j) {
+              std::cout << (j == 0 ? "\n| " : "");
 
-    std::cout << '\n';
+              std::ostringstream oss;
+              oss << std::showpoint << std::setprecision(precision);
+              oss << static_cast<double>(M[i][j]);
+
+              std::cout << std::setw(max_len_per_column[j]) << oss.str() 
+                        << (j == m - 1 ? " |" : " ");
+          }
+      }
+
+      std::cout << '\n';
   }
 
     template <class dataType>
@@ -238,11 +258,12 @@ namespace ttk {
         costMatrix[nRows][j] = treeTable[0][forestTableJ];
       }
       costMatrix[nRows][nCols] = 0;
-      if (cbdDebug) {
-        std::cout << "========================================\n"
-          << "        Cost Matrix after creation       \n"
-          << "========================================\n";
+      if (solverDebug) {
+        //std::cout << "========================================\n"
+         // << "        Cost Matrix after creation       \n"
+         // << "========================================\n";
         print_matrix(costMatrix, costMatrix.size(), costMatrix[0].size());
+         std::cout << "========================================\n";
       } 
     }
 
@@ -334,6 +355,9 @@ namespace ttk {
 
         return;
       } 
+      if (MA_mditz and (tree1->getNode(i-1)->getIsSubtree() + tree2->getNode(j-1)->getIsSubtree()) == 1){
+        std::cout << "\nOne subtree node and one branch node entered computeForestDistance\n";
+      }
         
         
       if(children1.size() != 0 && children2.size() != 0) {
@@ -343,124 +367,74 @@ namespace ttk {
         Timer t_assignment;
         std::vector<std::tuple<int, int>> forestAssignment;
         if (sortForestSolverInput && (!MA_mditz or thresholdOfCBD_ == 0)) {
-          std::sort(children1.begin(), children1.end(), [tree1](auto &left, auto &right) {
-            using NodeId = ftm::idNode;
+          
+          auto make_sorter = [](const auto& tree) {
+              return [&tree](const auto& left, const auto& right) {
+                 /*
+                return tree->getNode(left)->getVertexId2() < tree->getNode(right)->getVertexId2();
+                 */
+               
+                using NodeId = ftm::idNode;
+                bool isJoin = tree->template isJoinTree<dataType>();
+                auto upFunc = [isJoin](auto begin, auto end) {
+                    return isJoin ? std::min_element(begin, end) :  std::max_element(begin, end);
+                };
+                std::vector<NodeId> leftIdx = {
+                    static_cast<NodeId>(left), 
+                    static_cast<NodeId>(tree->getNode(left)->getOrigin())
+                };
+                std::vector<dataType> leftVals = {
+                    tree->template getValue<dataType>(left), 
+                    tree->template getValue<dataType>(tree->getNode(left)->getOrigin())
+                };
+                size_t leftMaxIdx = std::distance(leftVals.begin(), upFunc(leftVals.begin(), leftVals.end()));
+                NodeId leftUp = leftIdx[leftMaxIdx];
 
-            std::vector<NodeId> leftIdx = {
-                static_cast<NodeId>(left), 
-                static_cast<NodeId>(tree1->getNode(left)->getOrigin())
-            };
-            std::vector<dataType> leftVals = {
-                tree1->getValue<dataType>(left), 
-                tree1->getValue<dataType>(tree1->getNode(left)->getOrigin())
-            };
-            size_t leftMaxIdx = std::distance(leftVals.begin(), std::max_element(leftVals.begin(), leftVals.end()));
-            NodeId leftUp = leftIdx[leftMaxIdx];
+                std::vector<NodeId> rightIdx = {
+                    static_cast<NodeId>(right), 
+                    static_cast<NodeId>(tree->getNode(right)->getOrigin())
+                };
+                std::vector<dataType> rightVals = {
+                    tree->template getValue<dataType>(right), 
+                    tree->template getValue<dataType>(tree->getNode(right)->getOrigin())
+                };
+                size_t rightMaxIdx = std::distance(rightVals.begin(), upFunc(rightVals.begin(), rightVals.end()));
+                NodeId rightUp = rightIdx[rightMaxIdx];
 
-            std::vector<NodeId> rightIdx = {
-                static_cast<NodeId>(right), 
-                static_cast<NodeId>(tree1->getNode(right)->getOrigin())
-            };
-            std::vector<dataType> rightVals = {
-                tree1->getValue<dataType>(right), 
-                tree1->getValue<dataType>(tree1->getNode(right)->getOrigin())
-            };
-            size_t rightMaxIdx = std::distance(rightVals.begin(), std::max_element(rightVals.begin(), rightVals.end()));
-            NodeId rightUp = rightIdx[rightMaxIdx];
+                return tree->getNode(leftUp)->getVertexId2() < tree->getNode(rightUp)->getVertexId2();
+               
+              };
+          };
 
-            return tree1->getNode(leftUp)->getDataMap() < tree1->getNode(rightUp)->getDataMap();
 
-            /*
-            if (wbd) {
-              
-              return tree1->getNode(tree1->getNode(left)->getOrigin())->getDataMap() < tree1->getNode(tree1->getNode(right)->getOrigin())->getDataMap();
-            }else {
-              return tree1->getNode(left)->getDataMap() < tree1->getNode(right)->getDataMap();
+          std::sort(children1.begin(), children1.end(), make_sorter(tree1));
+
+          std::sort(children2.begin(), children2.end(), make_sorter(tree2));
+
+          if (solverDebug) {
+            std::cout <<"\n(" << i -1 << ", " << j -1 << ")~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+            std::cout << "\nTree1: Children of "<< i-1 << " sorted with size "<< children1.size()<< " : ";
+            for (auto t : children1) {
+              std::cout << "(" <<t <<";"<< tree1->getNode(t)->getVertexId2() <<";"<<tree1->getNode(tree1->getNode(t)->getOrigin())->getVertexId2()<<";"<< tree1->getNode(t)->getOrigin()<<"), ";
             }
-            */
+            //std::cout << "\nTree1 structure:\n";
+            //MA_mditz_print<dataType>(tree1);
 
-            /*
-            dataType death1;
-            dataType death2;
-            //Still there seems to be something wrong, maybe deletion is just to local, maybe adding death value helps
-            if (wbd) {
-              death1 = tree1->getValue<dataType>(left);
-              death2 = tree1->getValue<dataType>(right);
-            } else {
-              death1 = std::min(tree1->getValue<dataType>(left), tree1->getValue<dataType>(tree1->getNode(left)->getOrigin()));
-              death2 = std::min(tree1->getValue<dataType>(right), tree1->getValue<dataType>(tree1->getNode(right)->getOrigin()));
+            std::cout << "\nTree2: Children of "<< j-1 << " sorted with size "<< children2.size()<< " : ";
+            for (auto t : children2) {
+              std::cout << "(" <<t <<";"<< tree2->getNode(t)->getVertexId2() <<";"<<tree2->getNode(tree2->getNode(t)->getOrigin())->getVertexId2()<<";"<< tree2->getNode(t)->getOrigin()<<"), ";
             }
-            return (treeTable[left + 1][0] + death1) < (treeTable[right + 1][0] + death2);
-            //Multiple occurences of same death or bith scalar value of branches can lead to different outcomes of the approx. solvers 
-            //return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
-            */
-          });
-
-          std::sort(children2.begin(), children2.end(), [tree2](auto &left, auto &right) {
-            using NodeId = ftm::idNode;
-
-            std::vector<NodeId> leftIdx = {
-                static_cast<NodeId>(left), 
-                static_cast<NodeId>(tree2->getNode(left)->getOrigin())
-            };
-            std::vector<dataType> leftVals = {
-                tree2->getValue<dataType>(left), 
-                tree2->getValue<dataType>(tree2->getNode(left)->getOrigin())
-            };
-            size_t leftMaxIdx = std::distance(leftVals.begin(), std::max_element(leftVals.begin(), leftVals.end()));
-            NodeId leftUp = leftIdx[leftMaxIdx];
-
-            std::vector<NodeId> rightIdx = {
-                static_cast<NodeId>(right), 
-                static_cast<NodeId>(tree2->getNode(right)->getOrigin())
-            };
-            std::vector<dataType> rightVals = {
-                tree2->getValue<dataType>(right), 
-                tree2->getValue<dataType>(tree2->getNode(right)->getOrigin())
-            };
-            size_t rightMaxIdx = std::distance(rightVals.begin(), std::max_element(rightVals.begin(), rightVals.end()));
-            NodeId rightUp = rightIdx[rightMaxIdx];
-
-            return tree2->getNode(leftUp)->getDataMap() < tree2->getNode(rightUp)->getDataMap();
-
-            /*
-            if (wbd) {
-              return tree2->getNode(tree2->getNode(left)->getOrigin())->getDataMap() < tree2->getNode(tree2->getNode(right)->getOrigin())->getDataMap();
-            }else {
-              return tree2->getNode(left)->getDataMap() < tree2->getNode(right)->getDataMap();
-            }
-              */
-            /*
-            dataType death1;
-            dataType death2;
-            //Still there seems to be something wrong, maybe deletion is just to local, maybe adding death value helps
-            if (wbd) {
-              death1 = tree2->getValue<dataType>(left);
-              death2 = tree2->getValue<dataType>(right);
-            } else {
-              death1 = std::min(tree2->getValue<dataType>(left), tree2->getValue<dataType>(tree2->getNode(left)->getOrigin()));
-              death2 = std::min(tree2->getValue<dataType>(right), tree2->getValue<dataType>(tree2->getNode(right)->getOrigin()));
-            }
-            return (treeTable[0][left + 1] + death1) < (treeTable[0][right + 1] + death2);
-            //Multiple occurences of same death or bith scalar value of branches can lead to different outcomes of the approx. solvers 
-            //return tree1->getValue<dataType>(left) < tree1->getValue<dataType>(right);
-            */
-          });
-        }
-
-        if (cbdDebug) {
-          std::cout << "\nChildren1: ";
-          for (auto c: children1) {
-            std::cout << "(" << c <<", "<< treeTable[c + 1][0] << "), ";
-          }
-          std::cout << "\nChildren2: ";
-          for (auto c: children2) {
-            std::cout << "(" << c <<", "<< treeTable[0][c + 1] << "), ";
+            //std::cout << "\nTree2 structure:\n";
+            //MA_mditz_print<dataType>(tree2);
           }
         }
         
+        if (solverDebug) 
+          std::cout <<"\n(" << i -1 << ", " << j -1 << ") Cost Matrix\n";
         forestTerm3 = forestAssignmentProblem<dataType>(
           tree1, tree2, treeTable, children1, children2, forestAssignment);
+
+        
         
         
         if(not parallelize_ or (statsTest and omp_get_num_threads() == 1)){
@@ -477,13 +451,15 @@ namespace ttk {
           forestTable[i][j] = forestTerm3;
           // Add backtracking information
           
-          /*
-          std::cout <<"\n" << i << ", " << j << " hat forestTerm3 mit cost " << forestTerm3 << " und Assignment: ";
-          for(auto a : forestAssignment)
-            std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << "), ";
-          */
-          
-          
+          if (solverDebug) {
+            std::cout << std::setprecision(std::numeric_limits<double>::max_digits10) 
+              << "forestTerm3 with cost " << forestTerm3 << " and assignment: ";
+              for(auto a : forestAssignment)
+                std::cout << "(" << std::get<0>(a) <<", "<< std::get<1>(a) << "), ";
+              std::cout << "\n";
+              std::cout <<"\n(" << i -1 << ", " << j -1 << ")~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+          }
+        
           if (postprocess_) 
             forestBackTable[i][j] = forestAssignment;
           
@@ -959,14 +935,15 @@ namespace ttk {
           << "        MergeTree Distance Configuration         \n"
           << "========================================\n"
           << std::boolalpha // Prints 'true'/'false' instead of '1'/'0'
-          << "MA_mditz:          " << MA_mditz << "\n"
-          << "acceleration_:     " << acceleration_ << "\n"
-          << "parallelFor:       " << parallelFor << "\n"
-          << "statsTest:         " << statsTest << "\n"
-          << "useThresholdCBD_:  " << useThresholdCBD_ << "\n"
-          << "globalThreshold_:  " << globalThreshold_ << "\n"
-          << "thresholdOfCBD_:   " << thresholdOfCBD_ << "\n"
+          << "MA_mditz:               " << MA_mditz << "\n"
+          << "acceleration_:          " << acceleration_ << "\n"
+          << "parallelFor:            " << parallelFor << "\n"
+          << "statsTest:              " << statsTest << "\n"
+          << "useThresholdCBD_:       " << useThresholdCBD_ << "\n"
+          << "globalThreshold_:       " << globalThreshold_ << "\n"
+          << "thresholdOfCBD_:        " << thresholdOfCBD_ << "\n"
           << "branchDecomposition_:   " << branchDecomposition_ << "\n"
+          << "DataType:               " << typeid(dataType).name() << '\n'
           << "========================================\n";
       }
       
@@ -987,7 +964,7 @@ namespace ttk {
 
       ftm::MergeTree<dataType> mTree1Copy;
       ftm::MergeTree<dataType> mTree2Copy;
-      if(true){//saveTree_) {
+      if(saveTree_) {
         mTree1Copy = ftm::copyMergeTree<dataType>(mTree1);
         mTree2Copy = ftm::copyMergeTree<dataType>(mTree2);
       }
@@ -1017,16 +994,6 @@ namespace ttk {
       tree2 = &(mTree2Int.tree);
 
       if (cbdDebug) {
-        std::cout << "\nAfter preprocessing dataMap1: ";
-        for (unsigned int i = 0; i < tree1->getNumberOfNodes(); ++i){
-          std::cout << "(" <<i <<";"<< tree1->getNode(i)->getDataMap() <<"), ";
-        }
-
-        std::cout << "\nAfter preprocessing dataMap2: ";
-        for (unsigned int i = 0; i < tree2->getNumberOfNodes(); ++i){
-          std::cout << "(" <<i <<";"<< tree2->getNode(i)->getDataMap() <<"), ";
-        }
-
         std::cout << "\n========================================\n";
         std::cout << "Tree1 after preprocessing:\n";
         MA_mditz_print(mTree1);
@@ -1040,6 +1007,38 @@ namespace ttk {
         ss <<"("<< tree1Idx << "," << tree2Idx <<") starts computeDistance\n";
         std::cout << ss.str();
       }
+
+      if(false){
+        std::cout << "\nVertexId tree 1 unset ";
+        int num1 = 0;
+        int num2 = 0;
+        for (unsigned int i = 0; i < tree1->getNumberOfNodes(); ++i){
+          if (tree1->getNode(i)->getVertexId2() == -1){
+            if (tree1->getNode(i)->getIsSubtree()) {
+              num1++;
+            }
+            else {
+              num2++;
+            }
+          }
+        }
+        std::cout << num1<<" subtree nodes ;"<<" branch nodes "<<num2<<"; out of " <<tree1->getNumberOfNodes() <<"\n";
+        std::cout << "\nVertexId tree 2 unset ";
+        num1 = 0;
+        num2 = 0;
+        for (unsigned int i = 0; i < tree2->getNumberOfNodes(); ++i){
+          if (tree2->getNode(i)->getVertexId2() == -1){
+            if (tree2->getNode(i)->getIsSubtree()) {
+              num1++;
+            }
+            else {
+              num2++;
+            }
+          }
+        }
+        std::cout << num1<<" subtree nodes ;"<<" branch nodes "<<num2<<"; out of " <<tree2->getNumberOfNodes() <<"\n";
+      }
+
       // ---------------------
       // ----- Compute Distance
       // --------------------
@@ -1052,21 +1051,6 @@ namespace ttk {
         std::cout << ss.str();
       }
 
-      if (cbdDebug) {
-        /*
-        std::cout << "\n========================================\n";
-        std::cout << "Tree1:\n";
-        MA_mditz_print(mTree1);
-        std::cout << "========================================\n";
-        std::cout << "\n\nTree2:\n";
-        MA_mditz_print(mTree2);
-        std::cout << "========================================\n";
-        
-        std::cout << "\n\nMatching after compute Distance "<< outputMatching.size()<< " : ";
-        for (auto t : outputMatching) {
-          std::cout << "(" <<std::to_string(std::get<0>(t)) <<";"<<std::to_string(std::get<1>(t)) <<";" << std::to_string(std::get<2>(t))<<"), ";
-        }*/
-      }
       // ---------------------
       // ----- Postprocessing
       // --------------------

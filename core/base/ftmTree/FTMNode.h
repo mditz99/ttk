@@ -23,6 +23,7 @@ namespace ttk {
       friend class FTMTree_MT;
 
     private:
+      SimplexId vertexId2_ = -1;
       // mesh vertex where this node is
       SimplexId vertexId_;
       // For leaves, linkedNode is the saddle ending the persistence pair
@@ -41,6 +42,8 @@ namespace ttk {
 
     public:
       // MA_mditz additions
+
+      
 
       //This is just for testing purposes, should be deleted in the future
       inline ftm::idNode getDataMap() {
@@ -85,6 +88,13 @@ namespace ttk {
         vertexId_ = vertexId;
       }
 
+      inline SimplexId getVertexId2() const {
+        return vertexId2_;
+      }
+
+      inline void setVertexId2(SimplexId vertexId) {
+        vertexId2_ = vertexId;
+      }
       // Linked node
 
       inline SimplexId getOrigin() const {
