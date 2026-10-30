@@ -278,7 +278,11 @@ namespace ttk {
             nodeCorr[nodeOrigin] = nodeCpt + 1;
             treeNew->getNode(nodeCpt)->setOrigin(nodeCorr[nodeOrigin]);
             treeNew->getNode(nodeCorr[nodeOrigin])->setOrigin(nodeCpt);
+            treeNew->getNode(nodeCpt + 1)->setVertexId2(tree->getNode(nodeOrigin)->getVertexId2());
+            treeNew->getNode(nodeCpt + 1)->setTruePersistence(tree->getNode(nodeOrigin)->getTruePersistence());
           }
+          treeNew->getNode(nodeCpt)->setVertexId2(tree->getNode(node)->getVertexId2());
+          treeNew->getNode(nodeCpt)->setTruePersistence(tree->getNode(node)->getTruePersistence());
           newScalarsVector[nodeCpt] = tree->getValue<dataType>(node);
           nodeCorr[node] = nodeCpt;
         }
