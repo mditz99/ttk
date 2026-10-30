@@ -39,11 +39,19 @@ namespace ttk {
       //Temporary: This is just for testing purposes, should be deleted in the future
       ftm::idNode dataMap;
 
+      double truePersistence = 0;
+
 
     public:
       // MA_mditz additions
 
-      
+      inline double getTruePersistence() {
+        return truePersistence;
+      }
+
+      inline void setTruePersistence(double tp) {
+        truePersistence = tp;
+      }
 
       //This is just for testing purposes, should be deleted in the future
       inline ftm::idNode getDataMap() {

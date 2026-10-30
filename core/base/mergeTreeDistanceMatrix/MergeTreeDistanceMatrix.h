@@ -183,7 +183,7 @@ namespace ttk {
               mergeTreeDistance.setEpsilon3Tree1(epsilon3Tree1_);
               mergeTreeDistance.setEpsilon3Tree2(epsilon3Tree2_);
               mergeTreeDistance.setBranchDecomposition(branchDecomposition_);
-              mergeTreeDistance.setParallelize(parallelize_);
+              mergeTreeDistance.setParallelize(true); 
               mergeTreeDistance.setPersistenceThreshold(persistenceThreshold_);
               mergeTreeDistance.setDebugLevel(std::min(debugLevel_, 2));
               mergeTreeDistance.setThreadNumber(this->threadNumber_);
@@ -225,6 +225,9 @@ namespace ttk {
               branchDist.setPreprocess(false);
               // branchDist.setSaveTree(true);
               branchDist.setSaveTree(false);
+
+              branchDist.setUseMostImportantPairs(useMostImportantPairs_);
+              branchDist.setNumberOfMostImportantPairs(numMostImportantPairs_);
               Timer timer;
               dataType dist = branchDist.execute<dataType>(trees[i], trees[j]);
               std::cout << "[Time] DTime: " << timer.getElapsedTime() << "\n";

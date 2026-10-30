@@ -383,6 +383,9 @@ int ttkMergeTreeClustering::runCompute(
       branchDist.setThreadNumber(this->threadNumber_);
       branchDist.setDebugLevel(this->debugLevel_);
 
+      branchDist.setUseMostImportantPairs(useMostImportantPairs_);
+      branchDist.setNumberOfMostImportantPairs(numMostImportantPairs_);
+
       distance = branchDist.execute<dataType>(
         intermediateMTrees[0], intermediateMTrees[1], &outputMatching);
 
@@ -712,6 +715,14 @@ int ttkMergeTreeClustering::runOutput(
       visuMaker.setDebugLevel(this->debugLevel_);
       visuMaker.setIsPersistenceDiagram(IsPersistenceDiagram);
 
+      std::vector<double> truePersistences1(tree1->getNumberOfNodes());
+      //mditz: For DarkMatter results
+      for(unsigned int i = 0; i < tree1->getNumberOfNodes(); ++i){
+        truePersistences1[i] = tree1->getNode(i)->getTruePersistence();
+      }
+      std::string truePersName = "TruePersistence";
+      visuMaker.addCustomArray(truePersName, truePersistences1);
+
       visuMaker.makeTreesOutput<dataType>(tree1);
       nodeCorr.push_back(visuMaker.getNodeCorr()[0]);
 
@@ -728,6 +739,14 @@ int ttkMergeTreeClustering::runOutput(
       else
         visuMaker.setVtkOutputArc(vtkOutputArc2);
       visuMaker.setVtkOutputSegmentation(vtkOutputSegmentation2);
+
+      std::vector<double> truePersistences2(tree2->getNumberOfNodes());
+      //mditz: For DarkMatter results
+      for(unsigned int i = 0; i < tree2->getNumberOfNodes(); ++i){
+        truePersistences2[i] = tree2->getNode(i)->getTruePersistence();
+      }
+
+      visuMaker.addCustomArray(truePersName, truePersistences2);
 
       visuMaker.makeTreesOutput<dataType>(tree2);
       nodeCorr.push_back(visuMaker.getNodeCorr()[0]);

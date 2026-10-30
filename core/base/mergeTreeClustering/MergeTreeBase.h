@@ -75,7 +75,7 @@ namespace ttk {
 
     // Old
     bool parallelize_ = true;
-    int nodePerTask_ = 32;
+    int nodePerTask_ = std::numeric_limits<int>::max(); //Changed for WBD; standard: 32
     bool cleanTree_ = true;
 
 
@@ -1360,6 +1360,22 @@ namespace ttk {
       size_t preprocTreeSize = tree->getRealNumberOfNodes();
       size_t preprocTreeLeaves = tree->getNumberOfLeavesFromTree();
 
+      //mditz:Associating postprocessing pipeline with mergetreeclustering; Can be organized using an array, or keep and subsitute the call in TCBD computation
+      if(postprocess_){
+        for(unsigned int i = 0; i < tree->getNumberOfNodes(); ++i) {
+          //std::cout << static_cast<double>(tree->template getNodePersistence<dataType>(i)) << " is "<< i<<'`s True persistence\n';
+          tree->getNode(i)->setTruePersistence(static_cast<double>(tree->template getNodePersistence<dataType>(i)));
+        }
+      }
+
+      if(not branchDecomposition_){
+        ss << "[" <<treeIdx <<"]:|MTprocessed|:" << preprocTreeSize<<";|Leaves|:"<< preprocTreeLeaves; 
+        std::cout << ss.str() << std::endl;
+        ss.str("");
+        ss.clear();
+      }
+      
+
 
       if (statsTest){
         std::cout << "[StatsTest] MTn: " << tree->getRealNumberOfNodes() << "\n";
@@ -1377,7 +1393,7 @@ namespace ttk {
       if(MA_mditz){
         
         preprocessed_MT = ftm::copyMergeTree(mTree);
-
+        
         mTree = *computeCompleteBranchDecomposition<dataType>(&mTree, dataMap);
         if (shortTreeStats) {
           /*

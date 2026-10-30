@@ -321,6 +321,7 @@ namespace ttk {
       size_t const dim2 = (nn1 + 1) * dim1;
       size_t const dim3 = (depth1 + 1) * dim2;
       size_t const dim4 = (nn2 + 1) * dim3;
+      //std::cout << "memT alloc " << (nn1 + 1) * (depth1 + 1) * (nn2 + 1) * (depth2 + 1)<<", " <<nn1<<", "<< nn2;
 
       std::vector<dataType> memT((nn1 + 1) * (depth1 + 1) * (nn2 + 1)
                                  * (depth2 + 1));

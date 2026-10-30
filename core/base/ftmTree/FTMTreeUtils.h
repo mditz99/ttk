@@ -254,6 +254,8 @@ namespace ttk {
           //Temporary
           treeNew->getNode(nodeIndex)->setVertexId2(tree->getNode(node)->getVertexId2());
           treeNew->getNode(nodeOriginIndex)->setVertexId2(tree->getNode(nodeOrigin)->getVertexId2());
+          treeNew->getNode(nodeIndex)->setTruePersistence(tree->getNode(node)->getTruePersistence());
+          treeNew->getNode(nodeOriginIndex)->setTruePersistence(tree->getNode(nodeOrigin)->getTruePersistence());
 
           newScalarsVector[nodeOriginIndex]
             = tree->getValue<dataType>(nodeOrigin);

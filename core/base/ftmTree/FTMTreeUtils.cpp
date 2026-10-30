@@ -478,6 +478,8 @@ namespace ttk {
         this->getNode(i)->setIsSubtree(tree->getNode(i)->getIsSubtree());
         //this->getNode(i)->setVertexId(tree->getNode(i)->getVertexId());
         this->getNode(i)->setVertexId2(tree->getNode(i)->getVertexId2());
+        //this->getNode(i)->setDataMap(tree->getNode(i)->getDataMap());
+        this->getNode(i)->setTruePersistence(tree->getNode(i)->getTruePersistence());
       }
         
 
